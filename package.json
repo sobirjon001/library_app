@@ -1,0 +1,32 @@
+{
+  "name": "library_app",
+  "version": "1.0.0",
+  "description": "3 layers library app for DB, API and UI QA testings practice",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sobirjon001/library_app.git"
+  },
+  "author": "Sobir",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sobirjon001/library_app/issues"
+  },
+  "homepage": "https://github.com/sobirjon001/library_app#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.3",
+    "fs": "^0.0.1-security",
+    "https": "^1.0.0",
+    "mysql": "^2.18.1",
+    "path": "^0.12.7",
+    "swagger-ui-express": "^4.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  }
+}
