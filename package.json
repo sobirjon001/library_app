@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/sobirjon001/library_app#readme",
   "dependencies": {
+    "bcrypt": "^5.0.1",
     "cors": "^2.8.5",
     "express": "^4.17.3",
     "fs": "^0.0.1-security",

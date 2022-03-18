@@ -6,6 +6,7 @@ const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
 const swagger_ui = require("swagger-ui-express");
+const deploy_database = require("./api/database/database_deployment.js");
 
 // API server settings
 const env = process.env.ENV || "-dev";
@@ -43,14 +44,21 @@ app.post(`/api${env}/hello`, (rec, res) => {
   });
 });
 
+// users microservice
+app.get(`/api${env}/users`, user_router);
+
 // start server
-app.listen(http_port, (err) => {
-  if (err) return console.log(err);
-  console.log(`http server is listening on port ${http_port}`);
-});
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-const https_server = https.createServer(credentials, app);
-https_server.listen(https_port, (err) => {
-  if (err) return console.log(err);
-  console.log(`https server is listening on port ${https_port}`);
-});
+const start_server = () => {
+  app.listen(http_port, (err) => {
+    if (err) return console.log(err);
+    console.log(`http server is listening on port ${http_port}`);
+  });
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  const https_server = https.createServer(credentials, app);
+  https_server.listen(https_port, (err) => {
+    if (err) return console.log(err);
+    console.log(`https server is listening on port ${https_port}`);
+  });
+};
+
+deploy_database(start_server);
