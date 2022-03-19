@@ -22,7 +22,7 @@ module.exports = {
   },
   get_all_users: (callback) => {
     pool.query(
-      `select user_id first_name, last_name, dob, account_login, e_mail, phone_number from users`,
+      `select user_id, first_name, last_name, dob, account_login, e_mail, phone_number from users`,
       [],
       (err, res) => {
         if (err) return callback(err);
@@ -32,7 +32,7 @@ module.exports = {
   },
   get_user_by_id: (id, callback) => {
     pool.query(
-      `select user_id first_name, last_name, dob, account_login, e_mail, phone_number from users
+      `select user_id, first_name, last_name, dob, account_login, e_mail, phone_number from users
         where user_id = ?`,
       [id],
       (err, res) => {
@@ -43,18 +43,18 @@ module.exports = {
   },
   get_user_by_full_name: (full_name, callback) => {
     pool.query(
-      `select user_id first_name, last_name, dob, account_login, e_mail, phone_number from users
-        where first_name + ' ' + last_name = ?`,
+      `select user_id, first_name, last_name, dob, account_login, e_mail, phone_number from users
+        where concat(first_name, ' ', last_name) = ?`,
       [full_name],
       (err, res) => {
         if (err) return callback(err);
-        return callback(null, res[0]);
+        return callback(null, res);
       }
     );
   },
   get_user_by_e_mail: (e_mail, callback) => {
     pool.query(
-      `select user_id first_name, last_name, dob, account_login, e_mail, phone_number from users
+      `select user_id, first_name, last_name, dob, account_login, e_mail, phone_number from users
         where e_mail = ?`,
       [e_mail],
       (err, res) => {
@@ -65,7 +65,7 @@ module.exports = {
   },
   get_user_by_phone_number: (phone_number, callback) => {
     pool.query(
-      `select user_id first_name, last_name, dob, account_login, e_mail, phone_number from users
+      `select user_id, first_name, last_name, dob, account_login, e_mail, phone_number from users
         where phone_number = ?`,
       [phone_number],
       (err, res) => {
@@ -76,7 +76,7 @@ module.exports = {
   },
   get_user_by_account_login: (account_login, callback) => {
     pool.query(
-      `select user_id first_name, last_name, dob, account_login, e_mail, phone_number from users
+      `select user_id, first_name, last_name, dob, account_login, e_mail, phone_number from users
         where account_login = ?`,
       [account_login],
       (err, res) => {

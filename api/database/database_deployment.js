@@ -2,6 +2,7 @@
 const { resolve } = require("path");
 const pool = require("./database.js");
 const { genSaltSync, hashSync } = require("bcrypt");
+const { create_user } = require("../users_microservice/users.db.service");
 
 const salt = genSaltSync(10);
 
@@ -26,10 +27,10 @@ const table_exist = async (name) => {
         if (err) reject(err);
         if (results[0].exist == 0) {
           console.log(`Table ${name} does't exist`);
-          resolve(false);
+          return resolve(false);
         } else {
           console.log(`Table ${name} exist`);
-          resolve(true);
+          return resolve(true);
         }
       }
     );
@@ -40,8 +41,8 @@ const create_table = (name, query) => {
   return new Promise((resolve, reject) => {
     console.log(`Creating table ${name} . . .`);
     pool.query(`${query}`, [], (err, results, fields) => {
-      if (err) reject(err);
-      else resolve();
+      if (err) return reject(err);
+      else return resolve();
     });
   });
 };
@@ -56,7 +57,7 @@ const test_table_structure = (i, next) => {
         })
         .catch((err) => {
           console.log(err);
-          next();
+          return next();
         });
     else test_table_structure(++i, next);
   });
@@ -84,17 +85,16 @@ const test_super_user_exist = (next) => {
           e_mail: "admin@library.com",
           phone_number: 1234567890,
         };
-        return next();
-        // TO DO implement creating user
-        // create_user(data, (err, res) => {
-        //   if (err) console.log("Failed to create Super user!\n" + err.message);
-        //   if (res) {
-        //     console.log("Successfully created super admin!");
-        //     return next();
-        //   }
-        // });
+        create_user(data, (err, res) => {
+          if (err) console.log("Failed to create Super user!\n" + err.message);
+          if (res) {
+            console.log("Successfully created super admin!");
+            return next();
+          }
+        });
       } else {
         console.log("Super user exists, please login as:");
+        return next();
         // TO DO implement get admin credentials and console log
       }
     }
@@ -102,7 +102,7 @@ const test_super_user_exist = (next) => {
 };
 
 module.exports = (next) => {
-  test_table_structure(0, () => {
-    test_super_user_exist(next);
+  return test_table_structure(0, () => {
+    return test_super_user_exist(next);
   });
 };

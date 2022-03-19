@@ -6,11 +6,10 @@ module.exports = [
       first_name varchar(20) not null,
       last_name varchar(20) not null,
       dob date not null,
-      account_login varchar(20) not null,
+      account_login varchar(20) not null unique,
       password varchar(100) not null,
-      e_mail varchar(100) not null,
-      phone_number int(10),
-      unique (account_login,e_mail,phone_number)
+      e_mail varchar(100) not null unique,
+      phone_number varchar(10) unique
     );`,
   },
   {
@@ -71,12 +70,11 @@ module.exports = [
     name: "book_description",
     query: `create table book_description (
       book_description_id int auto_increment primary key,
-      title varchar(255) not null,
+      title varchar(255) not null unique,
       genre varchar(50),
       author varchar(50),
       published_year year,
-      age_restriction varchar(20),
-      unique (title)
+      age_restriction varchar(20)
     );`,
   },
   {
@@ -125,37 +123,37 @@ module.exports = [
   {
     name: "user_role_status_enum",
     query: `create table user_role_status_enum (
-      user_role_status varchar(50) not null
+      user_role_status varchar(50) not null unique
     );`,
   },
   {
     name: "book_condition_enum",
     query: `create table book_condition_enum (
-      book_condition varchar(50) not null
+      book_condition varchar(50) not null unique
     );`,
   },
   {
     name: "book_availability_enum",
     query: `create table book_availability_enum (
-      book_availability varchar(50) not null
+      book_availability varchar(50) not null unique
     );`,
   },
   {
     name: "age_restriction_enum",
     query: `create table age_restriction_enum (
-      age_restriction varchar(50) not null
+      age_restriction varchar(50) not null unique
     );`,
   },
   {
     name: "order_status_enum",
     query: `create table order_status_enum (
-      order_status varchar(50) not null
+      order_status varchar(50) not null unique
     );`,
   },
   {
     name: "event_name_enum",
     query: `create table event_name_enum (
-      event_name varchar(50) not null
+      event_name varchar(50) not null unique
     );`,
   },
 ];

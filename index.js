@@ -16,9 +16,15 @@ const credentials = {
   key: fs.readFileSync(path.resolve(__dirname, "ssl/private.key")),
   cert: fs.readFileSync(path.resolve(__dirname, "ssl/certificate.crt")),
 };
+const user_router = require("./api/users_microservice/users.router");
 
+// app settings
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(
+  express.urlencoded({
+    extended: false,
+  })
+);
 app.use(cors());
 
 // TO DO implement web server app
@@ -45,7 +51,7 @@ app.post(`/api${env}/hello`, (rec, res) => {
 });
 
 // users microservice
-app.get(`/api${env}/users`, user_router);
+app.use(`/api${env}/users`, user_router);
 
 // start server
 const start_server = () => {
