@@ -115,46 +115,41 @@ module.exports = {
       return callback(null, res);
     });
   },
-  set_user_role: (data, callback) => {
+  create_account: (data, callback) => {
     pool.query(
-      `insert into user_roles (
+      `insert into accounts (
         user_id,
         role_id,
-        user_role_status,
+        account_status,
         termination_data
       )
       values(?, ?, ?, ?);`,
-      [
-        data.user_id,
-        data.role_id,
-        data.user_role_status,
-        data.termination_data,
-      ],
+      [data.user_id, data.role_id, data.account_status, data.termination_data],
       (err, res) => {
         if (err) return callback(err);
         return callback(null, res);
       }
     );
   },
-  update_user_role_by_user_role_id: (data, callback) => {
+  update_account: (data, callback) => {
     pool.query(
-      `update user_roles set
-        user_role_status = ?,
+      `update accounts set
+        account_status = ?,
         termination_data = ?
-      where user_role_id = ?;`,
-      [data.user_role_status, data.termination_data, data.user_role_id],
+      where account_id = ?;`,
+      [data.account_status, data.termination_data, data.account_id],
       (err, res) => {
         if (err) return callback(err);
         return callback(null, res);
       }
     );
   },
-  get_user_role_names_by_user_id: (user_id, callback) => {
+  get_role_names_by_user_id: (user_id, callback) => {
     pool.query(
-      `SELECT r.role_id, r.role_name, ur.user_role_id, ur.user_role_status, ur.termination_date
+      `SELECT r.role_id, r.role_name, ac.account_id, ac.account_status, ac.termination_date
       FROM roles r
-      LEFT JOIN user_roles ur on r.role_id = ur.role_id
-      LEFT JOIN users u on ur.user_id = u.user_id
+      LEFT JOIN accounts ac on r.role_id = ac.role_id
+      LEFT JOIN users u on ac.user_id = u.user_id
       WHERE u.user_id = ?;`,
       [user_id],
       (err, res) => {
@@ -163,29 +158,29 @@ module.exports = {
       }
     );
   },
-  get_user_role_info_by_user_role_id: (user_role_id, callback) => {
+  get_account_info_by_account_id: (account_id, callback) => {
     pool.query(
       `SELECT u.user_id, u.first_name, u.last_name, u.dob, u.e_mail, u.phone_number,
-        ur.user_role_id, ur.user_role_status, ur.termination_date,
+        ac.account_id, ac.account_status, ac.termination_date,
         r.role_id, r.role_name, r.can_create_role, r.can_modify_role, r.can_delete_role,
         r.can_order, r.can_create_order, r.can_modify_order, r.can_delete_order,
         r.can_create_user, r.can_modify_user, r.can_delete_user,
         r.can_create_book, r.can_modify_book, r.can_delete_book, r.can_read_events
       FROM roles r 
-        LEFT JOIN user_roles ur on r.role_id = ur.role_id
-        LEFT JOIN users u on ur.user_id = u.user_id
-      WHERE ur.user_role_id = ?;`,
-      [user_role_id],
+        LEFT JOIN accounts ac on r.role_id = ac.role_id
+        LEFT JOIN users u on ac.user_id = u.user_id
+      WHERE ac.account_id = ?;`,
+      [account_id],
       (err, res) => {
         if (err) return callback(err);
         return callback(null, res);
       }
     );
   },
-  delete_user_role_by_user_role_id: (user_role_id, callback) => {
+  delete_account_by_account_id: (account_id, callback) => {
     pool.query(
-      `delete from user_roles where user_role_id = ?`,
-      [user_role_id],
+      `delete from accounts where account_id = ?`,
+      [account_id],
       (err, res) => {
         if (err) return callback(err);
         return callback(null, res);

@@ -1,0 +1,84 @@
+{
+  "title": "new role",
+  "description": "describes properties required to create a role",
+  "type": "object",
+  "properties": {
+    "role_name": {
+      "type": "string",
+      "description": "role name"
+    },
+    "can_create_role": {
+      "type": "boolean",
+      "description": "has clearance to create new roles"
+    },
+    "can_modify_role": {
+      "type": "boolean",
+      "description": "has clearance to modify new roles"
+    },
+    "can_delete_role": {
+      "type": "boolean",
+      "description": "has clearance to delete new roles"
+    },
+    "can_order": {
+      "type": "boolean",
+      "description": "has clearance to place new order"
+    },
+    "can_create_order": {
+      "type": "boolean",
+      "description": "has clearance to create new order"
+    },
+    "can_modify_order": {
+      "type": "boolean",
+      "description": "has clearance to modify order"
+    },
+    "can_delete_order": {
+      "type": "boolean",
+      "description": "has clearance to delete order"
+    },
+    "can_create_user": {
+      "type": "boolean",
+      "description": "has clearance to create new user"
+    },
+    "can_modify_user": {
+      "type": "boolean",
+      "description": "has clearance to modify user"
+    },
+    "can_delete_user": {
+      "type": "boolean",
+      "description": "has clearance to delete user"
+    },
+    "can_create_book": {
+      "type": "boolean",
+      "description": "has clearance to create book"
+    },
+    "can_modify_book": {
+      "type": "boolean",
+      "description": "has clearance to modify book"
+    },
+    "can_delete_book": {
+      "type": "boolean",
+      "description": "has clearance to delete book"
+    },
+    "can_read_events": {
+      "type": "boolean",
+      "description": "has clearance to read events"
+    }
+  },
+  "required": [
+    "role_name",
+    "can_create_role",
+    "can_modify_role",
+    "can_delete_role",
+    "can_order",
+    "can_create_order",
+    "can_modify_order",
+    "can_delete_order",
+    "can_create_user",
+    "can_modify_user",
+    "can_delete_user",
+    "can_create_book",
+    "can_modify_book",
+    "can_delete_book",
+    "can_read_events"
+  ]
+}

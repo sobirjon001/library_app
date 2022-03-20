@@ -68,7 +68,7 @@ const test_super_user_exist = (next) => {
   pool.query(
     `select exists(
       select 1 from users
-      where account_login = ?
+      where user_login = ?
     ) as 'exist';`,
     [admin],
     (error, results, fields) => {
@@ -80,7 +80,7 @@ const test_super_user_exist = (next) => {
           first_name: "Enabler",
           last_name: "Account",
           dob: "2022-03-17",
-          account_login: admin,
+          user_login: admin,
           password: admin_hash_password,
           e_mail: "admin@library.com",
           phone_number: 1234567890,
