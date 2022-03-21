@@ -13,21 +13,28 @@ const {
   get_user_by_phone_number,
   update_user,
   update_user_password,
+  get_protected_users,
+  set_protected_users,
+  remove_user_protection,
 } = require("./users.db.service");
 const {
-  create_account,
   create_role,
-  delete_account_by_account_id,
   delete_role_by_role_id,
-  get_account_info_by_account_id,
-  get_all_roles,
-  get_role_by_id,
-  get_role_by_role_name,
-  get_role_names_by_user_id,
+  create_account,
   update_account,
+  get_account_info_by_account_id,
+  delete_account_by_account_id,
+  get_role_names_by_user_id,
+  get_all_roles,
+  get_role_by_role_id,
+  get_role_by_role_name,
   update_role,
+  get_protected_roles,
+  set_protected_roles,
+  remove_role_protection,
 } = require("./roles.db.service");
 const moment = require("moment");
+const { response } = require("express");
 
 // encription options
 const secret_key = process.env.SECRET_KEY || "abc123";
@@ -44,7 +51,7 @@ const generate_pagitation_responce = (err, results, req, res) => {
     return error_500(err, res);
   }
   const results_length = results.length;
-  if (results_length == 0) {
+  if (results.length == 0) {
     return res.status(404).json({
       success: false,
       message: "No records found",
@@ -122,6 +129,19 @@ const reusable_get_user_method = (err, results, res, message) => {
   return success_200s(200, res, message, results);
 };
 
+const verify_ids = (ids, res, callback) => {
+  const invalid_ids = ids.filter((any) => {
+    if (!/^\d*$/.test(String(any))) return any;
+  });
+  if (invalid_ids.length > 0)
+    return error_400s(
+      400,
+      res,
+      "ids must be digits, wrong ids: " + invalid_ids
+    );
+  return callback();
+};
+
 const check_user_data_for_mistakes = (req, res, callback) => {
   if (
     req.body.phone_number == null ||
@@ -142,16 +162,82 @@ const check_user_data_for_mistakes = (req, res, callback) => {
       res,
       "invalid date of birth, has to be 'YYYY-MM-DD' format"
     );
-  else {
-    const today = moment();
-    const user_dob = moment(req.body.dob).format("YYYY-MM-DD");
-    if (today.diff(user_dob, "years") < 18)
-      return error_400s(
-        400,
-        res,
-        "age by given date of birth is too young, consumer has to be 18 and older"
+  const today = moment();
+  const user_dob = moment(req.body.dob).format("YYYY-MM-DD");
+  if (today.diff(user_dob, "years") < 18)
+    return error_400s(
+      400,
+      res,
+      "age by given date of birth is too young, consumer has to be 18 and older"
+    );
+  return callback();
+};
+
+const check_account_data_for_mistakes = (req, res, callback) => {
+  return verify_ids([req.body.user_id], res, () => {
+    return verify_ids([req.body.role_id], res, () => {
+      // TO DO implement account_status_enum
+      const account_status_enum = get_account_status_enum();
+      if (!account_status_enum.includes(req.body.account_status))
+        return error_400s(
+          400,
+          res,
+          "invalid account_status. Accepted values : " + account_status_enum
+        );
+      const today = moment();
+      const termination_date = moment(req.body.termination_date).format(
+        "YYYY-MM-DD"
       );
-  }
+      if (
+        moment().isAfter(moment(req.body.termination_date).format("YYYY-MM-DD"))
+      )
+        return error_400s(
+          403,
+          res,
+          "it's not allowed to terminate account retroactively"
+        );
+      return callback();
+    });
+  });
+};
+
+const check_for_protected_user_ids = (user_ids, res, callback) => {
+  return get_protected_users((err, results) => {
+    if (err) {
+      console.log(err);
+      return error_500s(500, err, res);
+    }
+    let protected_user_ids = [];
+    results.map((each_json) => {
+      protected_user_ids.push(each_json.user_id);
+    });
+    const found_protected_user_ids = user_ids.filter((user_id) => {
+      if (protected_user_ids.includes(user_id)) return user_id;
+    });
+    if (found_protected_user_ids.length > 0)
+      return error_400s(
+        403,
+        res,
+        "user_ids: " +
+          found_protected_user_ids +
+          " are used by system and protected from modifications and deletions"
+      );
+    return callback();
+  });
+};
+
+const check_for_protected_role_ids = (role_ids, res, callback) => {
+  const found_protected_role_ids = role_ids.filter((role_id) => {
+    if (protected_role_ids.includes(role_id)) return role_id;
+  });
+  if (found_protected_role_ids.length > 0)
+    return error_400s(
+      403,
+      res,
+      "role ids: " +
+        found_protected_role_ids +
+        " are used by system and protected from modifications and deletions"
+    );
   return callback();
 };
 
@@ -181,18 +267,20 @@ module.exports = {
     });
   },
   get_all_users: (req, res) => {
-    get_all_users((err, results) => {
+    return get_all_users((err, results) => {
       return generate_pagitation_responce(err, results, req, res);
     });
   },
-  get_user_by_id: (rec, res) => {
-    get_user_by_id(rec.params.id, (err, results) => {
-      return reusable_get_user_method(
-        err,
-        results,
-        res,
-        "Found user by provided user_id"
-      );
+  get_user_by_id: (req, res) => {
+    return verify_ids([req.params.id], res, () => {
+      return get_user_by_id(req.params.id, (err, results) => {
+        return reusable_get_user_method(
+          err,
+          results,
+          res,
+          "Found user by provided user_id"
+        );
+      });
     });
   },
   search_for_user: (req, res) => {
@@ -257,28 +345,30 @@ module.exports = {
   },
   update_user: (req, res) => {
     return check_user_data_for_mistakes(req, res, () => {
-      if (req.body.user_id == 1)
-        return error_400s(
-          403,
-          res,
-          "user id = 1 is administrator account and protected from modifications"
-        );
-      return update_user(req.body, (err, results) => {
-        if (err) {
-          console.log(err);
-          if (err.code == "ER_DUP_ENTRY") {
-            return error_400s(409, res, err.sqlMessage);
+      return check_for_protected_user_ids([req.body.user_id], res, () => {
+        return update_user(req.body, (err, results) => {
+          if (err) {
+            console.log(err);
+            if (err.code == "ER_DUP_ENTRY") {
+              return error_400s(409, res, err.sqlMessage);
+            }
+            return error_500s(500, err, res);
           }
-          return error_500s(500, err, res);
-        }
-        return success_200s(201, res, "Successfully updated user", {
-          user_id: req.body.user_id,
-          first_name: req.body.first_name,
-          last_name: req.body.last_name,
-          dob: req.body.dob,
-          account_login: req.body.account_login,
-          e_mail: req.body.e_mail,
-          phone_number: req.body.phone_number,
+          if (results.affectedRows == 0)
+            return error_400s(
+              404,
+              res,
+              "No users found by user_id " + req.body.user_id
+            );
+          return success_200s(201, res, "Successfully updated user", {
+            user_id: req.body.user_id,
+            first_name: req.body.first_name,
+            last_name: req.body.last_name,
+            dob: req.body.dob,
+            account_login: req.body.account_login,
+            e_mail: req.body.e_mail,
+            phone_number: req.body.phone_number,
+          });
         });
       });
     });
@@ -287,40 +377,90 @@ module.exports = {
     if (!req.body.user_ids)
       return error_400s(400, res, "no user_ids for deletion provided in body");
     const user_ids_to_delete = req.body.user_ids;
-    const invalid_user_ids = user_ids_to_delete.filter((any) => {
-      if (!/^\d*$/.test(String(any))) return any;
+    return verify_ids(user_ids_to_delete, res, () => {
+      return check_for_protected_user_ids(user_ids_to_delete, res, () => {
+        return delete_users_by_user_ids(user_ids_to_delete, (err, results) => {
+          if (err) {
+            console.log(err);
+            return error_500s(500, err, res);
+          }
+          if (results.affectedRows == 0)
+            return error_400s(
+              404,
+              res,
+              "no data was found to delet by user ids: " + user_ids_to_delete
+            );
+          return success_200s(
+            200,
+            res,
+            "successfully deleted user by ids: " + user_ids_to_delete,
+            {
+              affectedRows: results.affectedRows,
+            }
+          );
+        });
+      });
     });
-    if (invalid_user_ids.length > 0)
-      return error_400s(
-        400,
-        res,
-        "user_ids must me digits, wrong ids: " + invalid_user_ids
-      );
-    if (user_ids_to_delete.includes(1))
-      return error_400s(
-        403,
-        res,
-        "user id = 1 is administrator account and protected from deletions"
-      );
-    delete_users_by_user_ids(user_ids_to_delete, (err, results) => {
+  },
+  get_protected_users: (req, res) => {
+    return get_protected_users((err, results) => {
       if (err) {
         console.log(err);
         return error_500s(500, err, res);
       }
-      if (results.affectedRows == 0)
-        return error_400s(
-          404,
-          res,
-          "no data was found to delet by user ids: " + user_ids_to_delete
-        );
-      return success_200s(
-        200,
-        res,
-        "successfully deleted user by ids: " + user_ids_to_delete,
-        {
-          affectedRows: results.affectedRows,
+      let protected_user_ids = [];
+      results.map((each_json) => {
+        protected_user_ids.push(each_json.user_id);
+      });
+      return success_200s(200, res, "successfully fetched protected users", {
+        protected_user_ids: protected_user_ids,
+      });
+    });
+  },
+  set_protected_users: (req, res) => {
+    return verify_ids(req.body.user_ids, res, () => {
+      set_protected_users(req.body.user_ids, (err, results) => {
+        if (err) {
+          console.log(err);
+          if (err.code == "ER_DUP_ENTRY") {
+            return error_400s(409, res, err.sqlMessage);
+          }
+          return error_500s(500, err, res);
         }
+        return success_200s(201, res, "Successfully set protected users", {
+          protected_user_ids: req.body.user_ids,
+        });
+      });
+    });
+  },
+  remove_user_protection: (req, res) => {
+    if (!req.body.user_ids)
+      return error_400s(
+        400,
+        res,
+        "no user_ids provided in body for removing user protection"
       );
+    return verify_ids(req.body.user_ids, res, () => {
+      return remove_user_protection(req.body.user_ids, (err, results) => {
+        if (err) {
+          console.log(err);
+          return error_500s(500, err, res);
+        }
+        if (results.affectedRows == 0)
+          return error_400s(
+            404,
+            res,
+            "no data was found by user_ids: " + req.body.user_ids
+          );
+        return success_200s(
+          200,
+          res,
+          "successfully removed protections for user_ids: " + req.body.user_ids,
+          {
+            affectedRows: results.affectedRows,
+          }
+        );
+      });
     });
   },
   create_role: (req, res) => {
@@ -349,6 +489,222 @@ module.exports = {
         can_modify_book: req.body.can_modify_book,
         can_delete_book: req.body.can_delete_book,
         can_read_events: req.body.can_read_events,
+      });
+    });
+  },
+  get_all_roles: (req, res) => {
+    return get_all_roles((err, results) => {
+      return generate_pagitation_responce(err, results, req, res);
+    });
+  },
+  get_role_by_role_id: (req, res) => {
+    return verify_ids([req.params.id], res, () => {
+      return get_role_by_role_id(req.params.id, (err, results) => {
+        if (err) {
+          console.log(err);
+          return error_500s(500, err, res);
+        }
+        if (!results) {
+          return error_400s(
+            404,
+            res,
+            "No role data found by role_id " + req.params.id
+          );
+        }
+        return success_200s(200, res, "successfully found role", results);
+      });
+    });
+  },
+  get_role_by_role_name: (req, res) => {
+    if (!req.body.role_name)
+      return error_400s(400, res, "no role_name provided in body");
+    return get_role_by_role_name(req.body.role_name, (err, results) => {
+      if (err) {
+        console.log(err);
+        return error_500s(500, err, res);
+      }
+      if (!results) {
+        return error_400s(
+          404,
+          res,
+          "No role data found by role_name " + req.body.role_name
+        );
+      }
+      return success_200s(200, res, "successfully found role", results);
+    });
+  },
+  update_role: (req, res) => {
+    return check_for_protected_role_ids([req.body.role_id], res, () => {
+      return update_role(req.body, (err, results) => {
+        if (err) {
+          console.log(err);
+          if (err.code == "ER_DUP_ENTRY") {
+            return error_400s(409, res, err.sqlMessage);
+          }
+          return error_500s(500, err, res);
+        }
+        if (results.affectedRows == 0)
+          return error_400s(
+            404,
+            res,
+            "No roles found by role_id " + req.body.role_id
+          );
+        return success_200s(201, res, "Successfully updated role", {
+          role_id: req.body.role_id,
+          role_name: req.body.role_name,
+          can_create_role: req.body.can_create_role,
+          can_modify_role: req.body.can_modify_role,
+          can_delete_role: req.body.can_delete_role,
+          can_order: req.body.can_order,
+          can_create_order: req.body.can_create_order,
+          can_modify_order: req.body.can_modify_order,
+          can_delete_order: req.body.can_delete_order,
+          can_create_user: req.body.can_create_user,
+          can_modify_user: req.body.can_modify_user,
+          can_delete_user: req.body.can_delete_user,
+          can_create_book: req.body.can_create_book,
+          can_modify_book: req.body.can_modify_book,
+          can_delete_book: req.body.can_delete_book,
+          can_read_events: req.body.can_read_events,
+        });
+      });
+    });
+  },
+  delete_roles_by_role_ids: (req, res) => {
+    if (!req.body.role_ids)
+      return error_400s(400, res, "no role_ids for deletion provided in body");
+    const role_ids_to_delete = req.body.role_ids;
+    return verify_ids(role_ids_to_delete, res, () => {
+      return check_for_protected_role_ids(role_ids_to_delete, res, () => {
+        return delete_role_by_role_id(role_ids_to_delete, (err, results) => {
+          if (err) {
+            console.log(err);
+            return error_500s(500, err, res);
+          }
+          if (results.affectedRows == 0)
+            return error_400s(
+              404,
+              res,
+              "no data was found to delet by role_ids: " + role_ids_to_delete
+            );
+          return success_200s(
+            200,
+            res,
+            "successfully deleted roles by role_ids: " + role_ids_to_delete,
+            {
+              affectedRows: results.affectedRows,
+            }
+          );
+        });
+      });
+    });
+  },
+  get_protected_roles: (req, res) => {
+    return get_protected_roles((err, results) => {
+      if (err) {
+        console.log(err);
+        return error_500s(500, err, res);
+      }
+      if (results.length == 0) {
+        return res.status(404).json({
+          success: false,
+          message: "No records found",
+          db_responce: results,
+        });
+      }
+      let protected_role_ids = [];
+      results.map((each_json) => {
+        protected_role_ids.push(each_json.role_id);
+      });
+      return success_200s(200, res, "successfully fetched protected roles", {
+        protected_role_ids: protected_role_ids,
+      });
+    });
+  },
+  set_protected_roles: (req, res) => {
+    return verify_ids(req.body.role_ids, res, () => {
+      set_protected_roles(req.body.role_ids, (err, results) => {
+        if (err) {
+          console.log(err);
+          if (err.code == "ER_DUP_ENTRY") {
+            return error_400s(409, res, err.sqlMessage);
+          }
+          return error_500s(500, err, res);
+        }
+        console.log(results);
+        return success_200s(201, res, "Successfully set protected roles", {
+          protected_role_ids: req.body.role_ids,
+        });
+      });
+    });
+  },
+  remove_role_protection: (req, res) => {
+    if (!req.body.role_ids)
+      return error_400s(
+        400,
+        res,
+        "no role_ids provided in body for removing role protection"
+      );
+    return verify_ids(req.body.role_ids, res, () => {
+      return remove_role_protection(req.body.role_ids, (err, results) => {
+        if (err) {
+          console.log(err);
+          return error_500s(500, err, res);
+        }
+        if (results.affectedRows == 0)
+          return error_400s(
+            404,
+            res,
+            "no data was found by role_ids: " + req.body.role_ids
+          );
+        return success_200s(
+          200,
+          res,
+          "successfully removed protections for role_ids: " + req.body.role_ids,
+          {
+            affectedRows: results.affectedRows,
+          }
+        );
+      });
+    });
+  },
+  create_account: (req, res) => {
+    return check_account_data_for_mistakes(req, res, () => {
+      return create_account(req.body, (err, results) => {
+        if (err) {
+          console.log(err);
+          if (err.code == "ER_DUP_ENTRY") {
+            return error_400s(409, res, err.sqlMessage);
+          }
+          return error_500s(500, err, res);
+        }
+        return success_200s(201, res, "Successfully created account", {
+          account_id: results.insertId,
+          user_id: req.body.user_id,
+          role_id: req.body.role_id,
+          account_status: req.body.account_status,
+          termination_date: req.body.termination_date,
+        });
+      });
+    });
+  },
+  update_account: (req, res) => {
+    req.body.user_id = 1;
+    req.body.role_id = 1;
+    return check_account_data_for_mistakes(req, res, () => {
+      update_account(req.body, (err, results) => {
+        if (err) {
+          console.log(err);
+          if (err.code == "ER_DUP_ENTRY") {
+            return error_400s(409, res, err.sqlMessage);
+          }
+          return error_500s(500, err, res);
+        }
+        return success_200s(201, res, "Successfully updated account", {
+          account_id: req.body.account_id,
+          account_status: req.body.account_status,
+          termination_date: req.body.termination_date,
+        });
       });
     });
   },

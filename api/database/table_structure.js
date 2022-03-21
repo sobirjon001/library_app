@@ -13,6 +13,12 @@ module.exports = [
     );`,
   },
   {
+    name: "protected_users",
+    query: `CREATE TABLE protected_users (
+      user_id INT NOT NULL UNIQUE
+    );`,
+  },
+  {
     name: "roles",
     query: `CREATE TABLE roles (
       role_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -32,6 +38,12 @@ module.exports = [
       can_delete_book BOOLEAN DEFAULT FALSE,
       can_read_events BOOLEAN DEFAULT FALSE
     );`,
+  },
+  {
+    name: "protected_roles",
+    query: `CREATE TABLE protected_roles (
+      role_id INT NOT NULL UNIQUE
+    );;`,
   },
   {
     name: "accounts",

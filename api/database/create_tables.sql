@@ -9,6 +9,10 @@ CREATE TABLE users (
   phone_number VARCHAR(10) UNIQUE
 );
 
+CREATE TABLE protected_users (
+  user_id INT NOT NULL UNIQUE
+);
+
 CREATE TABLE roles (
   role_id INT AUTO_INCREMENT PRIMARY KEY,
   role_name VARCHAR(20) NOT NULL UNIQUE,
@@ -26,6 +30,10 @@ CREATE TABLE roles (
   can_modify_book BOOLEAN DEFAULT FALSE,
   can_delete_book BOOLEAN DEFAULT FALSE,
   can_read_events BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE protected_roles (
+  role_id INT NOT NULL UNIQUE
 );
 
 CREATE TABLE accounts (

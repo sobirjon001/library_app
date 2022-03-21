@@ -1,0 +1,24 @@
+{
+  "title": "new account",
+  "description": "creating account, which is a combitation of user and role",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": ["string", "integer"],
+      "description": "user id from user profile"
+    },
+    "role_id": {
+      "type": ["string", "integer"],
+      "description": "role id form account sets"
+    },
+    "account_status": {
+      "type": "string",
+      "description": "account status, that desides clearance"
+    },
+    "termination_date": {
+      "type": "string",
+      "description": "account termination date, that desides clearance"
+    }
+  },
+  "required": ["user_id", "role_id", "account_status", "termination_date"]
+}

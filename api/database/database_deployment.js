@@ -2,7 +2,14 @@
 const { resolve } = require("path");
 const pool = require("./database.js");
 const { genSaltSync, hashSync } = require("bcrypt");
-const { create_user } = require("../users_microservice/users.db.service");
+const {
+  create_user,
+  set_protected_users,
+} = require("../users_microservice/users.db.service");
+const {
+  create_role,
+  set_protected_roles,
+} = require("../users_microservice/roles.db.service");
 
 const salt = genSaltSync(10);
 
@@ -85,11 +92,25 @@ const test_super_user_exist = (next) => {
           e_mail: "admin@library.com",
           phone_number: 1234567890,
         };
-        create_user(data, (err, res) => {
-          if (err) console.log("Failed to create Super user!\n" + err.message);
-          if (res) {
+        return create_user(data, (error1, results1) => {
+          if (error1)
+            console.log("Failed to create Super user!\n" + error1.message);
+          if (results1) {
             console.log("Successfully created super admin!");
-            return next();
+            return set_protected_users(
+              [results1.insertId],
+              (error2, results2) => {
+                if (error2)
+                  console.log(
+                    "Failed to set protection for Super user!\n" +
+                      error2.message
+                  );
+                if (results2) {
+                  console.log("Successfully set protection for super admin!");
+                  return next();
+                }
+              }
+            );
           }
         });
       } else {
@@ -101,8 +122,127 @@ const test_super_user_exist = (next) => {
   );
 };
 
+const test_qa_role_exist = (next) => {
+  console.log("Checking if QA role exists . . .");
+  pool.query(
+    `select exists(
+      select 1 from roles
+      where role_name = ?
+    ) as exist;`,
+    ["QA"],
+    (error, results, fields) => {
+      if (error) throw new Error(error);
+      if (results[0].exist == 0) {
+        console.log("QA role doesn't exist, creating . . .");
+        const data = {
+          role_name: "QA",
+          can_create_role: true,
+          can_modify_role: true,
+          can_delete_role: true,
+          can_order: true,
+          can_create_order: true,
+          can_modify_order: true,
+          can_delete_order: true,
+          can_create_user: true,
+          can_modify_user: true,
+          can_delete_user: true,
+          can_create_book: true,
+          can_modify_book: true,
+          can_delete_book: true,
+          can_read_events: true,
+        };
+        return create_role(data, (error1, results1) => {
+          if (error1)
+            console.log("Failed to create QA role!\n" + error1.message);
+          if (results1) {
+            console.log("Successfully created QA role!");
+            return set_protected_roles(
+              [results1.insertId],
+              (error2, results2) => {
+                if (error2)
+                  console.log(
+                    "Failed to set protection for QA role!\n" + error2.message
+                  );
+                if (results2) {
+                  console.log("Successfully set protection for QA role!");
+                  return next();
+                }
+              }
+            );
+          }
+        });
+      } else {
+        console.log("QA role exists");
+        return next();
+      }
+    }
+  );
+};
+
+const test_student_role_exist = (next) => {
+  console.log("Checking if student role exists . . .");
+  pool.query(
+    `select exists(
+      select 1 from roles
+      where role_name = ?
+    ) as exist;`,
+    ["student"],
+    (error, results, fields) => {
+      if (error) throw new Error(error);
+      if (results[0].exist == 0) {
+        console.log("student role doesn't exist, creating . . .");
+        const data = {
+          role_name: "student",
+          can_create_role: false,
+          can_modify_role: false,
+          can_delete_role: false,
+          can_order: true,
+          can_create_order: false,
+          can_modify_order: false,
+          can_delete_order: false,
+          can_create_user: false,
+          can_modify_user: false,
+          can_delete_user: false,
+          can_create_book: false,
+          can_modify_book: false,
+          can_delete_book: false,
+          can_read_events: false,
+        };
+        return create_role(data, (error1, results1) => {
+          if (error1)
+            console.log("Failed to create student role!\n" + error1.message);
+          if (results1) {
+            console.log("Successfully created student role!");
+            return set_protected_roles(
+              [results1.insertId],
+              (error2, results2) => {
+                if (error2)
+                  console.log(
+                    "Failed to set protection for student role!\n" +
+                      error2.message
+                  );
+                if (results2) {
+                  console.log("Successfully set protection for student role!");
+                  return next();
+                }
+              }
+            );
+          }
+        });
+      } else {
+        console.log("Student role exists");
+        return next();
+      }
+    }
+  );
+};
+
 module.exports = (next) => {
   return test_table_structure(0, () => {
-    return test_super_user_exist(next);
+    return test_super_user_exist(() => {
+      return test_qa_role_exist(() => {
+        return test_student_role_exist(next);
+      });
+    });
   });
 };

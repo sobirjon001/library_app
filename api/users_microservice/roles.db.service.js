@@ -50,7 +50,7 @@ module.exports = {
       return callback(null, res);
     });
   },
-  get_role_by_id: (id, callback) => {
+  get_role_by_role_id: (id, callback) => {
     pool.query(`select * from roles where role_id = ?`, [id], (err, res) => {
       if (err) return callback(err);
       return callback(null, res[0]);
@@ -110,10 +110,14 @@ module.exports = {
     );
   },
   delete_role_by_role_id: (role_id, callback) => {
-    pool.query(`delete from roles where role_id = ?`, [role_id], (err, res) => {
-      if (err) return callback(err);
-      return callback(null, res);
-    });
+    pool.query(
+      `delete from roles where role_id in (?);`,
+      [role_id],
+      (err, res) => {
+        if (err) return callback(err);
+        return callback(null, res);
+      }
+    );
   },
   create_account: (data, callback) => {
     pool.query(
@@ -181,6 +185,38 @@ module.exports = {
     pool.query(
       `delete from accounts where account_id = ?`,
       [account_id],
+      (err, res) => {
+        if (err) return callback(err);
+        return callback(null, res);
+      }
+    );
+  },
+  get_protected_roles: (callback) => {
+    pool.query(`select * from protected_roles`, [], (err, res) => {
+      if (err) return callback(err);
+      return callback(null, res);
+    });
+  },
+  set_protected_roles: (protected_role_ids, callback) => {
+    let values_string = "";
+    protected_role_ids.map((protected_role_id, index) => {
+      if (index != protected_role_ids.length - 1)
+        values_string = values_string.concat(`(${protected_role_id}),\n`);
+      else values_string = values_string.concat(`(${protected_role_id});`);
+    });
+    pool.query(
+      `insert into protected_roles(role_id) values ${values_string}`,
+      [],
+      (err, res) => {
+        if (err) return callback(err);
+        return callback(null, res);
+      }
+    );
+  },
+  remove_role_protection: (ids, callback) => {
+    pool.query(
+      `delete from protected_roles where role_id in (?)`,
+      [ids],
       (err, res) => {
         if (err) return callback(err);
         return callback(null, res);

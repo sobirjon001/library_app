@@ -74,7 +74,7 @@ module.exports = {
       }
     );
   },
-  get_user_by_user_login: (user_login, callback) => {
+  get_user_by_account_login: (user_login, callback) => {
     pool.query(
       `select user_id, first_name, last_name, dob, user_login, e_mail, phone_number from users
         where user_login = ?`,
@@ -119,5 +119,37 @@ module.exports = {
       if (err) return callback(err);
       return callback(null, res);
     });
+  },
+  get_protected_users: (callback) => {
+    pool.query(`select * from protected_users`, [], (err, res) => {
+      if (err) return callback(err);
+      return callback(null, res);
+    });
+  },
+  set_protected_users: (protected_user_ids, callback) => {
+    let values_string = "";
+    protected_user_ids.map((protected_user_id, index) => {
+      if (index != protected_user_ids.length - 1)
+        values_string = values_string + `(${protected_user_id}),\n`;
+      else values_string = values_string + `(${protected_user_id});`;
+    });
+    pool.query(
+      `insert into protected_users(user_id) values ${values_string}`,
+      [],
+      (err, res) => {
+        if (err) return callback(err);
+        return callback(null, res);
+      }
+    );
+  },
+  remove_user_protection: (ids, callback) => {
+    pool.query(
+      `delete from protected_users where user_id in (?)`,
+      [ids],
+      (err, res) => {
+        if (err) return callback(err);
+        return callback(null, res);
+      }
+    );
   },
 };

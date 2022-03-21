@@ -3,8 +3,18 @@ const Ajv = require("ajv");
 const ajv = new Ajv({ allErrors: true, removeAdditional: "all" });
 
 // import schemas
-let new_role_schema = require("./json/create_role.json");
+const new_user_schema = require("./json/create_user.json");
+ajv.addSchema(new_user_schema, "new-user");
+const update_user_schema = require("./json/update_user.json");
+ajv.addSchema(update_user_schema, "update-user");
+const new_role_schema = require("./json/create_role.json");
 ajv.addSchema(new_role_schema, "new-role");
+const update_role_schema = require("./json/update_role.json");
+ajv.addSchema(update_role_schema, "update-role");
+const create_account = require("./json/create_account.json");
+ajv.addSchema(create_account, "create-account");
+const update_account = require("./json/update_account.json");
+ajv.addSchema(update_account, "update-account");
 
 /**
  * Format error responses
@@ -37,7 +47,7 @@ module.exports = {
     return (req, res, next) => {
       let valid = ajv.validate(schemaName, req.body);
       if (!valid) {
-        return res.send(errorResponse(ajv.errors));
+        return res.status(403).send(errorResponse(ajv.errors));
       }
       next();
     };
