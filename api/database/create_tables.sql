@@ -36,6 +36,10 @@ CREATE TABLE protected_roles (
   role_id INT NOT NULL UNIQUE
 );
 
+CREATE TABLE sign_up_roles (
+  role_name VARCHAR(20) NOT NULL UNIQUE
+);
+
 CREATE TABLE accounts (
   account_id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,

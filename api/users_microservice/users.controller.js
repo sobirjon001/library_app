@@ -23,8 +23,8 @@ const {
   create_account,
   update_account,
   get_account_info_by_account_id,
-  delete_account_by_account_id,
   get_role_names_by_user_id,
+  delete_accounts_by_account_ids,
   get_all_roles,
   get_role_by_role_id,
   get_role_by_role_name,
@@ -32,7 +32,12 @@ const {
   get_protected_roles,
   set_protected_roles,
   remove_role_protection,
+  delete_accounts_by_account_ids,
 } = require("./roles.db.service");
+const {
+  get_sign_up_roles,
+  get_account_status_enum,
+} = require("../aux_microservice/enum.db.service");
 const moment = require("moment");
 const { response } = require("express");
 
@@ -174,15 +179,26 @@ const check_user_data_for_mistakes = (req, res, callback) => {
 };
 
 const check_account_data_for_mistakes = (req, res, callback) => {
-  return verify_ids([req.body.user_id], res, () => {
-    return verify_ids([req.body.role_id], res, () => {
-      // TO DO implement account_status_enum
-      const account_status_enum = get_account_status_enum();
-      if (!account_status_enum.includes(req.body.account_status))
+  return verify_ids([req.body.user_id, req.body.role_id], res, () => {
+    // TO DO implement account_status_enum
+    return get_account_status_enum((err, results) => {
+      if (err) {
+        console.log(err);
+        return error_500s(500, err, res);
+      }
+      if (!results) {
+        return error_400s(
+          404,
+          res,
+          "No account status data found in account_status_enum table, please contact system administrator."
+        );
+      }
+      console.log("account_status_enum: " + results);
+      if (!results.includes(req.body.account_status))
         return error_400s(
           400,
           res,
-          "invalid account_status. Accepted values : " + account_status_enum
+          "invalid account_status. Accepted values : " + results
         );
       const today = moment();
       const termination_date = moment(req.body.termination_date).format(
@@ -673,9 +689,6 @@ module.exports = {
       return create_account(req.body, (err, results) => {
         if (err) {
           console.log(err);
-          if (err.code == "ER_DUP_ENTRY") {
-            return error_400s(409, res, err.sqlMessage);
-          }
           return error_500s(500, err, res);
         }
         return success_200s(201, res, "Successfully created account", {
@@ -695,15 +708,171 @@ module.exports = {
       update_account(req.body, (err, results) => {
         if (err) {
           console.log(err);
-          if (err.code == "ER_DUP_ENTRY") {
-            return error_400s(409, res, err.sqlMessage);
-          }
           return error_500s(500, err, res);
         }
         return success_200s(201, res, "Successfully updated account", {
           account_id: req.body.account_id,
           account_status: req.body.account_status,
           termination_date: req.body.termination_date,
+        });
+      });
+    });
+  },
+  get_account_info_by_account_id: (req, res) => {
+    return verify_ids([req.params.id], res, () => {
+      return get_account_info_by_account_id(req.params.id, (err, results) => {
+        if (err) {
+          console.log(err);
+          return error_500s(500, err, res);
+        }
+        if (!results) {
+          return error_400s(
+            404,
+            res,
+            "No account data found by account_id " + req.params.id
+          );
+        }
+        return success_200s(200, res, "successfully found account", results);
+      });
+    });
+  },
+  get_role_names_by_user_id: (req, res) => {
+    return verify_ids([req.params.id], res, () => {
+      return get_role_names_by_user_id(req.params.id, (err, results) => {
+        if (err) {
+          console.log(err);
+          return error_500s(500, err, res);
+        }
+        if (!results) {
+          return error_400s(
+            404,
+            res,
+            "No roles data found by user_id " + req.params.id
+          );
+        }
+        return success_200s(200, res, "successfully found roles", results);
+      });
+    });
+  },
+  delete_account_by_account_id: (req, res) => {
+    if (!req.body.account_ids)
+      return error_400s(
+        400,
+        res,
+        "account_ids not provided, please provide account_ids as array"
+      );
+    const account_ids_to_delete = req.body.account_ids;
+    return verify_ids(account_ids_to_delete, res, () => {
+      return delete_account_by_account_id(
+        account_ids_to_delete,
+        (err, results) => {
+          if (err) {
+            console.log(err);
+            return error_500s(500, err, res);
+          }
+          if (results.affectedRows == 0)
+            return error_400s(
+              404,
+              res,
+              "no data was found to delet by account_ids: " +
+                account_ids_to_delete
+            );
+          return success_200s(
+            200,
+            res,
+            "successfully deleted accounts by account_ids: " +
+              account_ids_to_delete,
+            {
+              affectedRows: results.affectedRows,
+            }
+          );
+        }
+      );
+    });
+  },
+  student_employee_sign_up: (req, res) => {
+    // 1
+    if (!req.body.role_name)
+      return error_400s(
+        400,
+        res,
+        "no role_name as sign up role provided in body"
+      );
+    return get_sign_up_roles((error1, results1) => {
+      if (error1) {
+        console.log(error1);
+        return error_500s(500, error1, res);
+      }
+      if (results1.length == 0) {
+        return error_400s(
+          404,
+          res,
+          "No sign up roles found, please report to system administrator"
+        );
+      }
+      console.log("sign up roles are " + results1);
+      if (!results1.includes(req.body.role_name))
+        return error_400s(
+          401,
+          res,
+          "provided role '" +
+            req.body.role_name +
+            "' is not allowed as sign up role"
+        );
+      // 2
+      return get_role_by_role_name(req.body.role_name, (error2, results2) => {
+        if (error2) {
+          console.log(error2);
+          return error_500s(500, error2, res);
+        }
+        if (!results2) {
+          return error_400s(
+            404,
+            res,
+            "No role data found by role_name " + req.body.role_name
+          );
+        }
+        req.body.role_id = results2.role_id;
+        // 3
+        return check_user_data_for_mistakes(req, res, () => {
+          return check_account_data_for_mistakes(req, res, () => {
+            req.body.password = hashSync(req.body.password, salt);
+            return create_user(req.body, (error3, results3) => {
+              if (error3) {
+                console.log(error3);
+                if (error3.code == "ER_DUP_ENTRY") {
+                  return error_400s(409, res, error3.sqlMessage);
+                }
+                return error_500s(500, error3, res);
+              }
+              req.body.user_id = results3.insertId;
+              // 4
+              return create_account(req.body, (error4, results4) => {
+                if (error4) {
+                  console.log(error4);
+                  return error_500s(500, error4, res);
+                }
+                return success_200s(
+                  201,
+                  res,
+                  "Successfully signed up as " + req.body.role_name,
+                  {
+                    account_id: results4.insertId,
+                    user_id: req.body.user_id,
+                    role_id: req.body.role_id,
+                    account_status: req.body.account_status,
+                    termination_date: req.body.termination_date,
+                    first_name: req.body.first_name,
+                    last_name: req.body.last_name,
+                    dob: req.body.dob,
+                    account_login: req.body.account_login,
+                    e_mail: req.body.e_mail,
+                    phone_number: req.body.phone_number,
+                  }
+                );
+              });
+            });
+          });
         });
       });
     });

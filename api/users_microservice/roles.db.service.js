@@ -181,10 +181,10 @@ module.exports = {
       }
     );
   },
-  delete_account_by_account_id: (account_id, callback) => {
+  delete_accounts_by_account_ids: (account_ids, callback) => {
     pool.query(
-      `delete from accounts where account_id = ?`,
-      [account_id],
+      `delete from accounts where account_id in (?)`,
+      [account_ids],
       (err, res) => {
         if (err) return callback(err);
         return callback(null, res);
@@ -205,7 +205,7 @@ module.exports = {
       else values_string = values_string.concat(`(${protected_role_id});`);
     });
     pool.query(
-      `insert into protected_roles(role_id) values ${values_string}`,
+      `insert ignore into protected_roles(role_id) values ${values_string}`,
       [],
       (err, res) => {
         if (err) return callback(err);

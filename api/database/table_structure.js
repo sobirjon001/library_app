@@ -46,6 +46,12 @@ module.exports = [
     );;`,
   },
   {
+    name: "sign_up_roles",
+    query: `CREATE TABLE sign_up_roles (
+      role_name VARCHAR(20) NOT NULL UNIQUE
+    );`,
+  },
+  {
     name: "accounts",
     query: `CREATE TABLE accounts (
       account_id INT AUTO_INCREMENT PRIMARY KEY,

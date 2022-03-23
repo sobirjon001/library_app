@@ -10,6 +10,10 @@ const {
   create_role,
   set_protected_roles,
 } = require("../users_microservice/roles.db.service");
+const {
+  save_to_sign_up_roles,
+  save_to_account_status_enum,
+} = require("../aux_microservice/enum.db.service");
 
 const salt = genSaltSync(10);
 
@@ -17,6 +21,11 @@ const table_schema = process.env.DB_SCHEMA || "library_db";
 const table_structure = require("./table_structure.js");
 const admin = process.env.ADMIN || "admin";
 const admin_password = process.env.ADMIN_PASSWORD || "admin";
+const {
+  system_roles,
+  account_statuses,
+  sign_up_roles,
+} = require("./configuration");
 
 // TO DO create enabler super admin
 
@@ -122,116 +131,214 @@ const test_super_user_exist = (next) => {
   );
 };
 
-const test_qa_role_exist = (next) => {
-  console.log("Checking if QA role exists . . .");
-  pool.query(
-    `select exists(
-      select 1 from roles
-      where role_name = ?
-    ) as exist;`,
-    ["QA"],
-    (error, results, fields) => {
-      if (error) throw new Error(error);
-      if (results[0].exist == 0) {
-        console.log("QA role doesn't exist, creating . . .");
-        const data = {
-          role_name: "QA",
-          can_create_role: true,
-          can_modify_role: true,
-          can_delete_role: true,
-          can_order: true,
-          can_create_order: true,
-          can_modify_order: true,
-          can_delete_order: true,
-          can_create_user: true,
-          can_modify_user: true,
-          can_delete_user: true,
-          can_create_book: true,
-          can_modify_book: true,
-          can_delete_book: true,
-          can_read_events: true,
-        };
-        return create_role(data, (error1, results1) => {
-          if (error1)
-            console.log("Failed to create QA role!\n" + error1.message);
-          if (results1) {
-            console.log("Successfully created QA role!");
-            return set_protected_roles(
-              [results1.insertId],
-              (error2, results2) => {
-                if (error2)
-                  console.log(
-                    "Failed to set protection for QA role!\n" + error2.message
-                  );
-                if (results2) {
-                  console.log("Successfully set protection for QA role!");
-                  return next();
-                }
-              }
-            );
-          }
-        });
-      } else {
-        console.log("QA role exists");
-        return next();
-      }
+const save_system_role = (i, system_roles, callback) => {
+  if (i == system_roles.length) return callback();
+  return create_role(system_roles[i], (error1, results1) => {
+    if (error1)
+      console.log(
+        "Failed to create " +
+          system_roles[i].role_name +
+          " role!\n" +
+          error1.message
+      );
+    if (results1) {
+      console.log(
+        "Successfully created " + system_roles[i].role_name + " role!"
+      );
+      return set_protected_roles([results1.insertId], (error2, results2) => {
+        if (error2)
+          console.log(
+            "Failed to set protection for " +
+              system_roles[i].role_name +
+              " role!\n" +
+              error2.message
+          );
+        if (results2) {
+          console.log(
+            "Successfully set protection for " +
+              system_roles[i].role_name +
+              " role!"
+          );
+          return save_system_role(++i, system_roles, callback);
+        }
+      });
     }
-  );
+  });
 };
 
-const test_student_role_exist = (next) => {
-  console.log("Checking if student role exists . . .");
-  pool.query(
-    `select exists(
-      select 1 from roles
-      where role_name = ?
-    ) as exist;`,
-    ["student"],
-    (error, results, fields) => {
-      if (error) throw new Error(error);
-      if (results[0].exist == 0) {
-        console.log("student role doesn't exist, creating . . .");
-        const data = {
-          role_name: "student",
-          can_create_role: false,
-          can_modify_role: false,
-          can_delete_role: false,
-          can_order: true,
-          can_create_order: false,
-          can_modify_order: false,
-          can_delete_order: false,
-          can_create_user: false,
-          can_modify_user: false,
-          can_delete_user: false,
-          can_create_book: false,
-          can_modify_book: false,
-          can_delete_book: false,
-          can_read_events: false,
-        };
-        return create_role(data, (error1, results1) => {
-          if (error1)
-            console.log("Failed to create student role!\n" + error1.message);
-          if (results1) {
-            console.log("Successfully created student role!");
-            return set_protected_roles(
-              [results1.insertId],
-              (error2, results2) => {
-                if (error2)
-                  console.log(
-                    "Failed to set protection for student role!\n" +
-                      error2.message
-                  );
-                if (results2) {
-                  console.log("Successfully set protection for student role!");
-                  return next();
-                }
-              }
-            );
-          }
-        });
-      } else {
-        console.log("Student role exists");
+const test_system_roles_exist = (next) => {
+  // 1
+  let system_role_names = system_roles.reduce((system_role) => {
+    return system_role.role_name;
+  });
+  pool.query(`select * from roles`, [], (error1, results1, fields) => {
+    if (error1) throw new Error(error1);
+    if (results1.length == 0) {
+      console.log(
+        "system roles " + system_role_names + " don't exist, creating . . ."
+      );
+      const existing_roles = results1.reduce((role) => {
+        return role.role_name;
+      });
+      const abcent_system_roles = system_roles.filter((system_role) => {
+        if (!existing_roles.includes(system_role.role_name)) return system_role;
+      });
+      if (abcent_system_roles.length == 0) {
+        console.log("system roles " + system_roles + " exist");
         return next();
+      }
+      // 2
+      system_role_names = abcent_system_roles.reduce((abcent_system_role) => {
+        return abcent_system_role.role_name;
+      });
+      console.log(
+        "system roles " + system_role_names + " don't exist, creating . . ."
+      );
+      return save_system_role(0, abcent_system_roles, next);
+    }
+  });
+};
+
+// const test_student_role_exist = (next) => {
+//   console.log("Checking if student role exists . . .");
+//   pool.query(
+//     `select exists(
+//       select 1 from roles
+//       where role_name = ?
+//     ) as exist;`,
+//     ["student"],
+//     (error, results, fields) => {
+//       if (error) throw new Error(error);
+//       if (results[0].exist == 0) {
+//         console.log("student role doesn't exist, creating . . .");
+//         const data = {
+//           role_name: "student",
+//           can_create_role: false,
+//           can_modify_role: false,
+//           can_delete_role: false,
+//           can_order: true,
+//           can_create_order: false,
+//           can_modify_order: false,
+//           can_delete_order: false,
+//           can_create_user: false,
+//           can_modify_user: false,
+//           can_delete_user: false,
+//           can_create_book: false,
+//           can_modify_book: false,
+//           can_delete_book: false,
+//           can_read_events: false,
+//         };
+//         return create_role(data, (error1, results1) => {
+//           if (error1)
+//             console.log("Failed to create student role!\n" + error1.message);
+//           if (results1) {
+//             console.log("Successfully created student role!");
+//             return set_protected_roles(
+//               [results1.insertId],
+//               (error2, results2) => {
+//                 if (error2)
+//                   console.log(
+//                     "Failed to set protection for student role!\n" +
+//                       error2.message
+//                   );
+//                 if (results2) {
+//                   console.log("Successfully set protection for student role!");
+//                   return next();
+//                 }
+//               }
+//             );
+//           }
+//         });
+//       } else {
+//         console.log("Student role exists");
+//         return next();
+//       }
+//     }
+//   );
+// };
+
+const test_sign_up_roles_exist = (next) => {
+  // 1
+  pool.query(`select * from sign_up_roles`, [], (error1, results1, fields) => {
+    if (error1) throw new Error(error1);
+    if (results1.length == 0) {
+      console.log(
+        "sign up roles " + sign_up_roles + " don't exist, creating . . ."
+      );
+      const abcent_sign_up_roles = results1.filter((sign_up_role) => {
+        if (!account_statuses.includes(sign_up_role)) return sign_up_role;
+      });
+      if (abcent_sign_up_roles.length == 0) {
+        console.log("sign up roles " + sign_up_roles + " exist");
+        return next();
+      }
+      // 2
+      console.log(
+        "sign up roles " + abcent_sign_up_roles + " don't exist, creating . . ."
+      );
+      return save_to_sign_up_roles(abcent_sign_up_roles, (error2, results2) => {
+        if (error2)
+          console.log(
+            "Failed to save sign up roles " +
+              abcent_sign_up_roles +
+              "!\n" +
+              error2.message
+          );
+        if (results2)
+          console.log(
+            "Successfully saved sign up roles " + abcent_sign_up_roles + "!"
+          );
+        return next();
+      });
+    }
+  });
+};
+
+const test_account_status_enums_exist = (next) => {
+  // 1
+  pool.query(
+    `select * from account_status_enum`,
+    [],
+    (error1, results1, fields) => {
+      if (error1) throw new Error(error1);
+      if (results1.length == 0) {
+        console.log(
+          "account statuses " +
+            account_statuses +
+            " don't exist, creating . . ."
+        );
+        const abcent_account_statuses = results1.filter((account_status) => {
+          if (!account_statuses.includes(account_status)) return account_status;
+        });
+        if (abcent_account_statuses.length == 0) {
+          console.log("account statuses " + account_statuses + " exist");
+          return next();
+        }
+        // 2
+        console.log(
+          "account statuses " +
+            abcent_account_statuses +
+            " don't exist, creating . . ."
+        );
+        return save_to_account_status_enum(
+          abcent_account_statuses,
+          (error2, results2) => {
+            if (error2)
+              console.log(
+                "Failed to save account statuses " +
+                  abcent_account_statuses +
+                  "!\n" +
+                  error2.message
+              );
+            if (results2)
+              console.log(
+                "Successfully saved account status " +
+                  abcent_account_statuses +
+                  "!"
+              );
+            return next();
+          }
+        );
       }
     }
   );
@@ -240,8 +347,10 @@ const test_student_role_exist = (next) => {
 module.exports = (next) => {
   return test_table_structure(0, () => {
     return test_super_user_exist(() => {
-      return test_qa_role_exist(() => {
-        return test_student_role_exist(next);
+      return test_system_roles_exist(() => {
+        return test_sign_up_roles_exist(() => {
+          return test_account_status_enums_exist(next);
+        });
       });
     });
   });
