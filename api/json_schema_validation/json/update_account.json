@@ -20,15 +20,9 @@
       "description": "account status, that desides clearance"
     },
     "termination_date": {
-      "type": "string",
+      "type": ["null", "string"],
       "description": "account termination date, that desides clearance"
     }
   },
-  "required": [
-    "user_id",
-    "role_id",
-    "account_status",
-    "user_login",
-    "termination_date"
-  ]
+  "required": ["account_id", "account_status", "termination_date"]
 }

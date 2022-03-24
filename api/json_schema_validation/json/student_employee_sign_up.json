@@ -40,7 +40,7 @@
       "description": "account status, that desides clearance"
     },
     "termination_date": {
-      "type": "string",
+      "type": ["null", "string"],
       "description": "account termination date, that desides clearance"
     }
   },

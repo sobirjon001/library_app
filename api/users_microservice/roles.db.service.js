@@ -125,10 +125,10 @@ module.exports = {
         user_id,
         role_id,
         account_status,
-        termination_data
+        termination_date
       )
       values(?, ?, ?, ?);`,
-      [data.user_id, data.role_id, data.account_status, data.termination_data],
+      [data.user_id, data.role_id, data.account_status, data.termination_date],
       (err, res) => {
         if (err) return callback(err);
         return callback(null, res);
@@ -139,9 +139,9 @@ module.exports = {
     pool.query(
       `update accounts set
         account_status = ?,
-        termination_data = ?
+        termination_date = ?
       where account_id = ?;`,
-      [data.account_status, data.termination_data, data.account_id],
+      [data.account_status, data.termination_date, data.account_id],
       (err, res) => {
         if (err) return callback(err);
         return callback(null, res);

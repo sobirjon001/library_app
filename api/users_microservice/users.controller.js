@@ -32,7 +32,6 @@ const {
   get_protected_roles,
   set_protected_roles,
   remove_role_protection,
-  delete_accounts_by_account_ids,
 } = require("./roles.db.service");
 const {
   get_sign_up_roles,
@@ -108,10 +107,11 @@ const success_200s = (code, res, message, results) => {
   });
 };
 
-const error_400s = (code, res, message) => {
+const error_400s = (code, res, message, data) => {
   return res.status(code).json({
     success: false,
     message: message,
+    data: data,
   });
 };
 
@@ -186,19 +186,31 @@ const check_account_data_for_mistakes = (req, res, callback) => {
         console.log(err);
         return error_500s(500, err, res);
       }
-      if (!results) {
+      if (results.length == 0) {
         return error_400s(
           404,
           res,
           "No account status data found in account_status_enum table, please contact system administrator."
         );
       }
-      console.log("account_status_enum: " + results);
-      if (!results.includes(req.body.account_status))
+      const existing_account_statuses = [];
+      results.forEach((each_row) => {
+        existing_account_statuses.push(each_row.account_status);
+      });
+      if (!existing_account_statuses.includes(req.body.account_status))
         return error_400s(
           400,
           res,
-          "invalid account_status. Accepted values : " + results
+          "invalid account_status. Accepted values : " +
+            existing_account_statuses
+        );
+      if (req.body.termination_date == null) return callback();
+      const date_re = /^\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])$/;
+      if (!date_re.test(String(req.body.termination_date)))
+        return error_400s(
+          400,
+          res,
+          "invalid termination_date,if provided has to be 'YYYY-MM-DD' format, or null"
         );
       const today = moment();
       const termination_date = moment(req.body.termination_date).format(
@@ -686,17 +698,44 @@ module.exports = {
   },
   create_account: (req, res) => {
     return check_account_data_for_mistakes(req, res, () => {
-      return create_account(req.body, (err, results) => {
-        if (err) {
-          console.log(err);
-          return error_500s(500, err, res);
+      // 1
+      return get_role_names_by_user_id(req.body.user_id, (error1, results1) => {
+        if (error1) {
+          console.log(error1);
+          return error_500s(500, error1, res);
         }
-        return success_200s(201, res, "Successfully created account", {
-          account_id: results.insertId,
-          user_id: req.body.user_id,
-          role_id: req.body.role_id,
-          account_status: req.body.account_status,
-          termination_date: req.body.termination_date,
+        const found_duplicates = results1.filter((role) => {
+          if (role.role_id == req.body.role_id) return role;
+        });
+        if (found_duplicates.length > 0) {
+          let duplicates = [];
+          found_duplicates.forEach((duplicate) => {
+            duplicates.push({
+              account_id: duplicate.account_id,
+              user_id: req.body.user_id,
+              role_id: duplicate.role_id,
+              role_name: duplicate.role_name,
+              account_status: duplicate.account_status,
+              termination_date: duplicate.termination_date,
+            });
+          });
+          return error_400s(403, res, "account already exists", {
+            duplicates,
+          });
+        }
+        // 2
+        return create_account(req.body, (error2, results2) => {
+          if (error2) {
+            console.log(error2);
+            return error_500s(500, error2, res);
+          }
+          return success_200s(201, res, "Successfully created account", {
+            account_id: results2.insertId,
+            user_id: req.body.user_id,
+            role_id: req.body.role_id,
+            account_status: req.body.account_status,
+            termination_date: req.body.termination_date,
+          });
         });
       });
     });
@@ -754,7 +793,7 @@ module.exports = {
       });
     });
   },
-  delete_account_by_account_id: (req, res) => {
+  delete_accounts_by_account_ids: (req, res) => {
     if (!req.body.account_ids)
       return error_400s(
         400,
@@ -763,7 +802,7 @@ module.exports = {
       );
     const account_ids_to_delete = req.body.account_ids;
     return verify_ids(account_ids_to_delete, res, () => {
-      return delete_account_by_account_id(
+      return delete_accounts_by_account_ids(
         account_ids_to_delete,
         (err, results) => {
           if (err) {
@@ -792,12 +831,6 @@ module.exports = {
   },
   student_employee_sign_up: (req, res) => {
     // 1
-    if (!req.body.role_name)
-      return error_400s(
-        400,
-        res,
-        "no role_name as sign up role provided in body"
-      );
     return get_sign_up_roles((error1, results1) => {
       if (error1) {
         console.log(error1);
@@ -810,14 +843,21 @@ module.exports = {
           "No sign up roles found, please report to system administrator"
         );
       }
-      console.log("sign up roles are " + results1);
-      if (!results1.includes(req.body.role_name))
+      const allowed_sign_up_roles = [];
+      results1.forEach((each_row) => {
+        allowed_sign_up_roles.push(each_row.role_name);
+      });
+      console.log("sign up roles are " + allowed_sign_up_roles);
+      if (!allowed_sign_up_roles.includes(req.body.role_name))
         return error_400s(
           401,
           res,
           "provided role '" +
             req.body.role_name +
-            "' is not allowed as sign up role"
+            "' is not allowed as sign up role",
+          {
+            allowed_sign_up_roles: allowed_sign_up_roles,
+          }
         );
       // 2
       return get_role_by_role_name(req.body.role_name, (error2, results2) => {

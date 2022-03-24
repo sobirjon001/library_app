@@ -15,7 +15,7 @@ const create_account = require("./json/create_account.json");
 ajv.addSchema(create_account, "create-account");
 const update_account = require("./json/update_account.json");
 ajv.addSchema(update_account, "update-account");
-const student_employee_sign_up = require("./json/student_employee_sugn_up.json");
+const student_employee_sign_up = require("./json/student_employee_sign_up.json");
 ajv.addSchema(student_employee_sign_up, "sign-up");
 
 /**
