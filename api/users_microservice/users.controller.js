@@ -148,33 +148,42 @@ const verify_ids = (ids, res, callback) => {
 };
 
 const check_user_data_for_mistakes = (req, res, callback) => {
+  let failures = [];
+  if (req.body.first_name.length > 20)
+    failures.push("'first_name' has to be no more than 20 characters");
+  if (req.body.last_name.length > 20)
+    failures.push("'last_name' has to be no more than 20 characters");
+  if (req.body.user_login.length > 20)
+    failures.push("'user_login' has to be no more than 20 characters");
+  if (req.body.password.length > 20)
+    failures.push("'password' has to be no more than 20 characters");
   if (
     req.body.phone_number == null ||
-    !req.body.phone_number.toString().match(/^\d{10}$/)
+    !req.body.phone_number
+      .toString()
+      .match(/^([0-9]{3})[-]?([0-9]{3})[-]?([0-9]{4})$/)
   )
-    return error_400s(400, res, "invalid phone number, has to be 10 digits");
+    failures.push(
+      "'phone number' has to have 10 digits or pattern of '000-000-0000'"
+    );
   const email_re =
     /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   if (
     req.body.e_mail == null ||
     !email_re.test(String(req.body.e_mail).toLowerCase())
   )
-    return error_400s(400, res, "invalid email, has to be example@example.com");
+    failures.push("'email' has to be example@example.com");
   const date_re = /^\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])$/;
   if (req.body.dob == null || !date_re.test(String(req.body.dob)))
-    return error_400s(
-      400,
-      res,
-      "invalid date of birth, has to be 'YYYY-MM-DD' format"
-    );
+    failures.push("'dob' has to be 'YYYY-MM-DD' format");
   const today = moment();
   const user_dob = moment(req.body.dob).format("YYYY-MM-DD");
   if (today.diff(user_dob, "years") < 18)
-    return error_400s(
-      400,
-      res,
+    failures.push(
       "age by given date of birth is too young, consumer has to be 18 and older"
     );
+  if (failures.length > 0)
+    return error_400s(403, res, "invalid fields, please fix values", failures);
   return callback();
 };
 
