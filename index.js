@@ -11,11 +11,11 @@ const deploy_database = require("./api/database/database_deployment.js");
 // API server settings
 const env = process.env.ENV || "-dev";
 const http_port = process.env.HTTP_PORT || 7000;
-const https_port = process.env.HTTPS_PORT || 7443;
-const credentials = {
-  key: fs.readFileSync(path.resolve(__dirname, "ssl/private.key")),
-  cert: fs.readFileSync(path.resolve(__dirname, "ssl/certificate.crt")),
-};
+// const https_port = process.env.HTTPS_PORT || 7443;
+// const credentials = {
+//   key: fs.readFileSync(path.resolve(__dirname, "ssl/private.key")),
+//   cert: fs.readFileSync(path.resolve(__dirname, "ssl/certificate.crt")),
+// };
 const user_router = require("./api/users_microservice/users.router");
 
 // app settings
@@ -59,12 +59,12 @@ const start_server = () => {
     if (err) return console.log(err);
     console.log(`http server is listening on port ${http_port}`);
   });
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-  const https_server = https.createServer(credentials, app);
-  https_server.listen(https_port, (err) => {
-    if (err) return console.log(err);
-    console.log(`https server is listening on port ${https_port}`);
-  });
+  // process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  // const https_server = https.createServer(credentials, app);
+  // https_server.listen(https_port, (err) => {
+  //   if (err) return console.log(err);
+  //   console.log(`https server is listening on port ${https_port}`);
+  // });
 };
 
 deploy_database(start_server);
