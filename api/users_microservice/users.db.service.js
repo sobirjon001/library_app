@@ -41,47 +41,26 @@ module.exports = {
       }
     );
   },
-  get_user_by_full_name: (full_name, callback) => {
+  search_user: (data, callback) => {
+    let search_parameters = "";
+    Object.keys(data).forEach((key) => {
+      if (data[key] && data[key] !== "*" && data[key] !== "") {
+        if (search_parameters === "")
+          search_parameters = `where ${key} = '${data[key]}'`;
+        else
+          search_parameters =
+            search_parameters + `\n\tand ${key} = '${data[key]}'`;
+      }
+    });
+    console.log("search_parameters: " + search_parameters);
     pool.query(
-      `select user_id, first_name, last_name, dob, user_login, e_mail, phone_number from users
-        where concat(first_name, ' ', last_name) = ?`,
-      [full_name],
+      `select user_id, first_name, last_name, dob, user_login, e_mail, phone_number
+      from users
+      ${search_parameters}`,
+      [],
       (err, res) => {
         if (err) return callback(err);
         return callback(null, res);
-      }
-    );
-  },
-  get_user_by_e_mail: (e_mail, callback) => {
-    pool.query(
-      `select user_id, first_name, last_name, dob, user_login, e_mail, phone_number from users
-        where e_mail = ?`,
-      [e_mail],
-      (err, res) => {
-        if (err) return callback(err);
-        return callback(null, res[0]);
-      }
-    );
-  },
-  get_user_by_phone_number: (phone_number, callback) => {
-    pool.query(
-      `select user_id, first_name, last_name, dob, user_login, e_mail, phone_number from users
-        where phone_number = ?`,
-      [phone_number],
-      (err, res) => {
-        if (err) return callback(err);
-        return callback(null, res[0]);
-      }
-    );
-  },
-  get_user_by_account_login: (user_login, callback) => {
-    pool.query(
-      `select user_id, first_name, last_name, dob, user_login, e_mail, phone_number from users
-        where user_login = ?`,
-      [user_login],
-      (err, res) => {
-        if (err) return callback(err);
-        return callback(null, res[0]);
       }
     );
   },

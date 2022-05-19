@@ -6,11 +6,8 @@ const {
   create_user,
   delete_users_by_user_ids,
   get_all_users,
-  get_user_by_account_login,
-  get_user_by_e_mail,
-  get_user_by_full_name,
+  search_user,
   get_user_by_id,
-  get_user_by_phone_number,
   update_user,
   update_user_password,
   get_protected_users,
@@ -59,7 +56,6 @@ const generate_pagitation_responce = (err, results, req, res) => {
     return res.status(404).json({
       success: false,
       message: "No records found",
-      db_responce: results,
     });
   }
   const body = req.body;
@@ -164,7 +160,7 @@ const check_user_data_for_mistakes = (req, res, callback) => {
       .match(/^([0-9]{3})[-]?([0-9]{3})[-]?([0-9]{4})$/)
   )
     failures.push(
-      "'phone number' has to have 10 digits or pattern of '000-000-0000'"
+      "'phone_number' has to have 10 digits or pattern of '000-000-0000'"
     );
   const email_re =
     /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -172,7 +168,7 @@ const check_user_data_for_mistakes = (req, res, callback) => {
     req.body.e_mail == null ||
     !email_re.test(String(req.body.e_mail).toLowerCase())
   )
-    failures.push("'email' has to be example@example.com");
+    failures.push("'e_mail' has to be example@example.com");
   const date_re = /^\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])$/;
   if (req.body.dob == null || !date_re.test(String(req.body.dob)))
     failures.push("'dob' has to be 'YYYY-MM-DD' format");
@@ -321,63 +317,57 @@ module.exports = {
     });
   },
   search_for_user: (req, res) => {
-    if (req.query.id)
-      return get_user_by_id(req.query.id, (err, results) => {
-        return reusable_get_user_method(
-          err,
-          results,
-          res,
-          "Found user by provided user_id"
-        );
-      });
-    if (req.query.account_login)
-      return get_user_by_account_login(
-        req.query.account_login,
-        (err, results) => {
-          return reusable_get_user_method(
-            err,
-            results,
-            res,
-            "Found user by provided account_login"
-          );
+    const acceptable_search_keys = [
+      "user_id",
+      "user_login",
+      "e_mail",
+      "phone_number",
+      "first_name",
+      "last_name",
+    ];
+    let acceptable_keys_not_found = true;
+    let all_of_acceptable_keys_are_blank = true;
+    let not_acceptable_query_parameters = [];
+    Object.keys(req.query).forEach((key) => {
+      if (acceptable_search_keys.includes(key)) {
+        acceptable_keys_not_found = false;
+        console.log("initial: " + all_of_acceptable_keys_are_blank);
+        const value = req.query[key];
+        console.log(key + " " + typeof value + " " + value);
+        if (all_of_acceptable_keys_are_blank) {
+          if (value !== "" && value !== "*") {
+            all_of_acceptable_keys_are_blank = false;
+            console.log("bingo!");
+            console.log(all_of_acceptable_keys_are_blank);
+          }
         }
-      );
-    if (req.query.e_mail)
-      return get_user_by_e_mail(req.query.e_mail, (err, results) => {
-        return reusable_get_user_method(
-          err,
-          results,
-          res,
-          "Found user by provided e_mail"
-        );
-      });
-    if (req.query.phone_number)
-      return get_user_by_phone_number(
-        req.query.phone_number,
-        (err, results) => {
-          return reusable_get_user_method(
-            err,
-            results,
-            res,
-            "Found user by provided phone_number"
-          );
-        }
-      );
-    if (req.query.full_name)
-      return get_user_by_full_name(req.query.full_name, (err, results) => {
-        return generate_pagitation_responce(err, results, req, res);
-      });
-    return res.status(403).json({
-      success: false,
-      message: "invalid querry parameter",
-      used_query_parameters: req.query,
-      available_query_parameters: [
-        "id",
-        "account_login",
-        "e_mail",
-        "phone_number",
-        "full_name",
-      ],
+      } else not_acceptable_query_parameters.push(key);
+    });
+    if (
+      acceptable_keys_not_found ||
+      not_acceptable_query_parameters.length > 0 ||
+      all_of_acceptable_keys_are_blank
+    ) {
+      let responce_json = {
+        available_query_parameters: [
+          "user_id",
+          "user_login",
+          "e_mail",
+          "phone_number",
+          "first_name",
+          "last_name",
+        ],
+      };
+      if (not_acceptable_query_parameters.length > 0)
+        responce_json.not_acceptable_query_parameters =
+          not_acceptable_query_parameters;
+      if (!acceptable_keys_not_found && all_of_acceptable_keys_are_blank)
+        responce_json.invalid_values =
+          "all query parameters are empty or *, at least one has to have value";
+      return error_400s(403, res, "invalid querry parameter", responce_json);
+    }
+    return search_user(req.query, (err, results) => {
+      return generate_pagitation_responce(err, results, req, res);
     });
   },
   update_user: (req, res) => {
