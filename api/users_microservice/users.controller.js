@@ -45,6 +45,9 @@ const token_duration = process.env.TOKEN_DURATION || "4h";
 const admin = process.env.ADMIN || "admin";
 const admin_password = process.env.ADMIN_PASSWORD || "admin";
 
+// other busines options
+const min_age = process.env.MIN_AGE || 18;
+
 // local reusable functions
 const generate_pagitation_responce = (err, results, req, res) => {
   if (err) {
@@ -142,46 +145,56 @@ const verify_ids = (ids, res, callback) => {
   return callback();
 };
 
-const check_user_data_for_mistakes = (req, res, callback) => {
+const check_user_data_for_mistakes = (body, res, callback) => {
   let failures = [];
-  if (req.body.first_name && req.body.first_name.length > 20)
-    failures.push("'first_name' has to be no more than 20 characters");
-  if (req.body.last_name && req.body.last_name.length > 20)
-    failures.push("'last_name' has to be no more than 20 characters");
-  if (req.body.user_login && req.body.user_login.length > 20)
-    failures.push("'user_login' has to be no more than 20 characters");
-  if (req.body.password && req.body.password.length > 20)
-    failures.push("'password' has to be no more than 20 characters");
-  if (
-    req.body.phone_number &&
-    (req.body.phone_number === null ||
-      !req.body.phone_number
-        .toString()
-        .match(/^([0-9]{3})[-]?([0-9]{3})[-]?([0-9]{4})$/))
-  )
-    failures.push(
-      "'phone_number' has to have 10 digits or pattern of '000-000-0000'"
-    );
-  const email_re =
-    /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-  if (
-    req.body.e_mail &&
-    (req.body.e_mail === null ||
-      !email_re.test(String(req.body.e_mail).toLowerCase()))
-  )
-    failures.push("'e_mail' has to be example@example.com");
-  const date_re = /^\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])$/;
-  if (
-    req.body.dob &&
-    (req.body.dob === null || !date_re.test(String(req.body.dob)))
-  )
-    failures.push("'dob' has to be 'YYYY-MM-DD' format");
-  const today = moment();
-  const user_dob = moment(req.body.dob).format("YYYY-MM-DD");
-  if (today.diff(user_dob, "years") < 18)
-    failures.push(
-      "age by given date of birth is too young, consumer has to be 18 and older"
-    );
+  Object.keys(body).forEach((key) => {
+    switch (key) {
+      case "first_name":
+      case "last_name":
+      case "user_login":
+      case "password":
+        if (body[key].length > 20)
+          failures.push(`'${key}' has to be no more than 20 characters`);
+        break;
+      case "phone_number":
+        if (
+          body.phone_number === null ||
+          !body.phone_number
+            .toString()
+            .match(/^([0-9]{3})[-]?([0-9]{3})[-]?([0-9]{4})$/)
+        )
+          failures.push(
+            "'phone_number' has to have 10 digits or pattern of '000-000-0000'"
+          );
+        break;
+      case "e_mail":
+        const email_re =
+          /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        if (
+          body.e_mail === null ||
+          !email_re.test(String(body.e_mail).toLowerCase())
+        )
+          failures.push("'e_mail' has to be example@example.com");
+        break;
+      case "dob":
+        const date_re = /^\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])$/;
+        if (body.dob === null || !date_re.test(String(body.dob)))
+          failures.push("'dob' has to be 'YYYY-MM-DD' format");
+        const today = moment();
+        const user_dob = moment(body.dob).format("YYYY-MM-DD");
+        if (today.diff(user_dob, "years") < min_age)
+          failures.push(
+            `age by given date of birth is too young, consumer has to be ${min_age} and older`
+          );
+        break;
+      case "user_id":
+        if (body.user_id === null || !body.user_id.toString().match(/\d+/))
+          failures.push("'user_id' has to all digits");
+        break;
+      default:
+        failures.push(`field named '${key}' is not acceptrable!`);
+    }
+  });
   if (failures.length > 0)
     return error_400s(403, res, "invalid fields, please fix values", failures);
   return callback();
@@ -376,10 +389,34 @@ module.exports = {
     });
   },
   update_user: (req, res) => {
-    return check_user_data_for_mistakes(req, res, () => {
+    if (req.body.password)
+      return error_400s(
+        403,
+        res,
+        "Password update is prohibited! User has to change password himself by 'Forogot Password' procedure!"
+      );
+    return check_user_data_for_mistakes(req.body, res, () => {
+      if (!req.body.user_id || Object.keys(req.body).length === 1)
+        return error_400s(
+          403,
+          res,
+          "invalid fields, at least one optional field has to be present",
+          {
+            required_field: "user_id",
+            optional_fields: [
+              "first_name",
+              "last_name",
+              "dob",
+              "user_login",
+              "e_mail",
+              "phone_number",
+            ],
+            restricted_field: "password",
+          }
+        );
       return check_for_protected_user_ids([req.body.user_id], res, () => {
         req.body.phone_number = normalize_phone_number(req.body.phone_number);
-        return update_user(req.body, (err, results) => {
+        return update_user(req.body, (err, results, fields) => {
           if (err) {
             console.log(err);
             if (err.code == "ER_DUP_ENTRY") {
@@ -387,20 +424,15 @@ module.exports = {
             }
             return error_500s(500, err, res);
           }
-          if (results.affectedRows == 0)
+          if (results.affectedRows === 0)
             return error_400s(
               404,
               res,
               "No users found by user_id " + req.body.user_id
             );
-          return success_200s(201, res, "Successfully updated user", {
-            user_id: req.body.user_id,
-            first_name: req.body.first_name,
-            last_name: req.body.last_name,
-            dob: req.body.dob,
-            account_login: req.body.account_login,
-            e_mail: req.body.e_mail,
-            phone_number: req.body.phone_number,
+          return get_user_by_id(req.body.user_id, (err, results) => {
+            if (err) console.log(err);
+            return success_200s(201, res, "Successfully updated user", results);
           });
         });
       });

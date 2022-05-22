@@ -63,18 +63,15 @@ module.exports = {
     );
   },
   update_user: (data, callback) => {
+    let columns_to_update = Object.keys(data).reduce((result, key) => {
+      if (key !== "user_id") result = result + `, ${key} = '${data[key]}'`;
+      return result;
+    }, "");
+    columns_to_update = columns_to_update.substring(2);
     pool.query(
-      `update users set first_name = ?, last_name = ?, dob = ?, user_login = ?, e_mail = ?, phone_number = ?
+      `update users set ${columns_to_update}
         where user_id = ?`,
-      [
-        data.first_name,
-        data.last_name,
-        data.dob,
-        data.user_login,
-        data.e_mail,
-        data.phone_number,
-        data.user_id,
-      ],
+      [data.user_id],
       (err, res) => {
         if (err) return callback(err);
         return callback(null, res);

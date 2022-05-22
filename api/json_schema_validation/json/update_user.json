@@ -4,7 +4,7 @@
   "type": "object",
   "properties": {
     "user_id": {
-      "type": "integer",
+      "type": ["string", "integer"],
       "description": "user's id"
     },
     "first_name": {
@@ -32,13 +32,5 @@
       "description": "user's phone number"
     }
   },
-  "required": [
-    "user_id",
-    "first_name",
-    "last_name",
-    "dob",
-    "user_login",
-    "e_mail",
-    "phone_number"
-  ]
+  "required": ["user_id"]
 }

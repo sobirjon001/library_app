@@ -1,6 +1,7 @@
 // import libraries
 const Ajv = require("ajv");
-const ajv = new Ajv({ allErrors: true, removeAdditional: "all" });
+const ajv = new Ajv({ allErrors: true, allowUnionTypes: true });
+// const ajv = new Ajv({ allErrors: true, removeAdditional: "all" });
 
 // import schemas
 const new_user_schema = require("./json/create_user.json");
