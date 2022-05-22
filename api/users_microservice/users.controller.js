@@ -81,7 +81,6 @@ const generate_pagitation_responce = (err, results, req, res) => {
   }
   const start = (requested_page - 1) * requested_number_of_items_per_page;
   const result = results.splice(start, requested_number_of_items_per_page);
-  console.log(result);
   return res.status(200).json({
     success: true,
     message: "successfull request",
@@ -145,19 +144,20 @@ const verify_ids = (ids, res, callback) => {
 
 const check_user_data_for_mistakes = (req, res, callback) => {
   let failures = [];
-  if (req.body.first_name.length > 20)
+  if (req.body.first_name && req.body.first_name.length > 20)
     failures.push("'first_name' has to be no more than 20 characters");
-  if (req.body.last_name.length > 20)
+  if (req.body.last_name && req.body.last_name.length > 20)
     failures.push("'last_name' has to be no more than 20 characters");
-  if (req.body.user_login.length > 20)
+  if (req.body.user_login && req.body.user_login.length > 20)
     failures.push("'user_login' has to be no more than 20 characters");
-  if (req.body.password.length > 20)
+  if (req.body.password && req.body.password.length > 20)
     failures.push("'password' has to be no more than 20 characters");
   if (
-    req.body.phone_number == null ||
-    !req.body.phone_number
-      .toString()
-      .match(/^([0-9]{3})[-]?([0-9]{3})[-]?([0-9]{4})$/)
+    req.body.phone_number &&
+    (req.body.phone_number === null ||
+      !req.body.phone_number
+        .toString()
+        .match(/^([0-9]{3})[-]?([0-9]{3})[-]?([0-9]{4})$/))
   )
     failures.push(
       "'phone_number' has to have 10 digits or pattern of '000-000-0000'"
@@ -165,12 +165,16 @@ const check_user_data_for_mistakes = (req, res, callback) => {
   const email_re =
     /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   if (
-    req.body.e_mail == null ||
-    !email_re.test(String(req.body.e_mail).toLowerCase())
+    req.body.e_mail &&
+    (req.body.e_mail === null ||
+      !email_re.test(String(req.body.e_mail).toLowerCase()))
   )
     failures.push("'e_mail' has to be example@example.com");
   const date_re = /^\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])$/;
-  if (req.body.dob == null || !date_re.test(String(req.body.dob)))
+  if (
+    req.body.dob &&
+    (req.body.dob === null || !date_re.test(String(req.body.dob)))
+  )
     failures.push("'dob' has to be 'YYYY-MM-DD' format");
   const today = moment();
   const user_dob = moment(req.body.dob).format("YYYY-MM-DD");
@@ -274,11 +278,16 @@ const check_for_protected_role_ids = (role_ids, res, callback) => {
   return callback();
 };
 
+const normalize_phone_number = (initial_value) => {
+  return initial_value.toString().replace(/-/g, "");
+};
+
 // controllers
 module.exports = {
   create_user: (req, res) => {
     return check_user_data_for_mistakes(req, res, () => {
       req.body.password = hashSync(req.body.password, salt);
+      req.body.phone_number = normalize_phone_number(req.body.phone_number);
       return create_user(req.body, (err, results) => {
         if (err) {
           console.log(err);
@@ -331,14 +340,10 @@ module.exports = {
     Object.keys(req.query).forEach((key) => {
       if (acceptable_search_keys.includes(key)) {
         acceptable_keys_not_found = false;
-        console.log("initial: " + all_of_acceptable_keys_are_blank);
         const value = req.query[key];
-        console.log(key + " " + typeof value + " " + value);
         if (all_of_acceptable_keys_are_blank) {
           if (value !== "" && value !== "*") {
             all_of_acceptable_keys_are_blank = false;
-            console.log("bingo!");
-            console.log(all_of_acceptable_keys_are_blank);
           }
         }
       } else not_acceptable_query_parameters.push(key);
@@ -373,6 +378,7 @@ module.exports = {
   update_user: (req, res) => {
     return check_user_data_for_mistakes(req, res, () => {
       return check_for_protected_user_ids([req.body.user_id], res, () => {
+        req.body.phone_number = normalize_phone_number(req.body.phone_number);
         return update_user(req.body, (err, results) => {
           if (err) {
             console.log(err);
@@ -658,7 +664,6 @@ module.exports = {
           }
           return error_500s(500, err, res);
         }
-        console.log(results);
         return success_200s(201, res, "Successfully set protected roles", {
           protected_role_ids: req.body.role_ids,
         });
@@ -846,7 +851,6 @@ module.exports = {
       results1.forEach((each_row) => {
         allowed_sign_up_roles.push(each_row.role_name);
       });
-      console.log("sign up roles are " + allowed_sign_up_roles);
       if (!allowed_sign_up_roles.includes(req.body.role_name))
         return error_400s(
           401,

@@ -9,6 +9,7 @@ const pool = createPool({
   password: process.env.MYSQL_PASSWORD || "library_app",
   database: process.env.MYSQL_DATABASE || "library_db",
   connectionLimit: 10,
+  dateStrings: true,
 });
 
 module.exports = pool;

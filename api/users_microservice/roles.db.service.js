@@ -45,7 +45,7 @@ module.exports = {
     );
   },
   get_all_roles: (callback) => {
-    pool.query(`select * from roles`, [], (err, res) => {
+    pool.query(`select * from roles`, (err, res) => {
       if (err) return callback(err);
       return callback(null, res);
     });

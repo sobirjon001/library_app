@@ -23,7 +23,6 @@ module.exports = {
   get_all_users: (callback) => {
     pool.query(
       `select user_id, first_name, last_name, dob, user_login, e_mail, phone_number from users`,
-      [],
       (err, res) => {
         if (err) return callback(err);
         return callback(null, res);
@@ -52,7 +51,6 @@ module.exports = {
             search_parameters + `\n\tand ${key} = '${data[key]}'`;
       }
     });
-    console.log("search_parameters: " + search_parameters);
     pool.query(
       `select user_id, first_name, last_name, dob, user_login, e_mail, phone_number
       from users
