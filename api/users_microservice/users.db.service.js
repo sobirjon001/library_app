@@ -91,6 +91,7 @@ module.exports = {
   delete_users_by_user_ids: (ids, callback) => {
     pool.query(`delete from users where user_id in (?)`, [ids], (err, res) => {
       if (err) return callback(err);
+      console.log(res);
       return callback(null, res);
     });
   },
@@ -108,7 +109,7 @@ module.exports = {
       else values_string = values_string + `(${protected_user_id});`;
     });
     pool.query(
-      `insert into protected_users(user_id) values ${values_string}`,
+      `insert ignore into protected_users(user_id) values ${values_string}`,
       [],
       (err, res) => {
         if (err) return callback(err);
@@ -118,7 +119,7 @@ module.exports = {
   },
   remove_user_protection: (ids, callback) => {
     pool.query(
-      `delete from protected_users where user_id in (?)`,
+      `delete ignore from protected_users where user_id in (?)`,
       [ids],
       (err, res) => {
         if (err) return callback(err);

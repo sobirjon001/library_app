@@ -449,7 +449,7 @@ module.exports = {
             console.log(err);
             return error_500s(500, err, res);
           }
-          if (results.affectedRows == 0)
+          if (results.affectedRows === 0)
             return error_400s(
               404,
               res,
@@ -487,10 +487,6 @@ module.exports = {
       set_protected_users(req.body.user_ids, (err, results) => {
         if (err) {
           console.log(err);
-          if (err.code == "ER_DUP_ENTRY") {
-            return error_400s(409, res, err.sqlMessage);
-          }
-          return error_500s(500, err, res);
         }
         return success_200s(201, res, "Successfully set protected users", {
           protected_user_ids: req.body.user_ids,
@@ -511,16 +507,10 @@ module.exports = {
           console.log(err);
           return error_500s(500, err, res);
         }
-        if (results.affectedRows == 0)
-          return error_400s(
-            404,
-            res,
-            "no data was found by user_ids: " + req.body.user_ids
-          );
         return success_200s(
           200,
           res,
-          "successfully removed protections for user_ids: " + req.body.user_ids,
+          "user_ids: " + req.body.user_ids + " are no longer protected",
           {
             affectedRows: results.affectedRows,
           }
