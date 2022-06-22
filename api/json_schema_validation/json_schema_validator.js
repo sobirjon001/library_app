@@ -1,23 +1,17 @@
 // import libraries
 const Ajv = require("ajv");
-const ajv = new Ajv({ allErrors: true, allowUnionTypes: true });
-// const ajv = new Ajv({ allErrors: true, removeAdditional: "all" });
+// const ajv = new Ajv({ allErrors: true, allowUnionTypes: true });
+const ajv = new Ajv({ allErrors: true });
+const schema = require("./schemas");
 
 // import schemas
-const new_user_schema = require("./json/create_user.json");
-ajv.addSchema(new_user_schema, "new-user");
-const update_user_schema = require("./json/update_user.json");
-ajv.addSchema(update_user_schema, "update-user");
-const new_role_schema = require("./json/create_role.json");
-ajv.addSchema(new_role_schema, "new-role");
-const update_role_schema = require("./json/update_role.json");
-ajv.addSchema(update_role_schema, "update-role");
-const create_account = require("./json/create_account.json");
-ajv.addSchema(create_account, "create-account");
-const update_account = require("./json/update_account.json");
-ajv.addSchema(update_account, "update-account");
-const student_employee_sign_up = require("./json/student_employee_sign_up.json");
-ajv.addSchema(student_employee_sign_up, "sign-up");
+ajv.addSchema(schema.create_user, "new-user");
+ajv.addSchema(schema.update_user, "update-user");
+ajv.addSchema(schema.create_role, "new-role");
+ajv.addSchema(schema.update_role, "update-role");
++ajv.addSchema(schema.create_account, "create-account");
+ajv.addSchema(schema.update_account, "update-account");
+ajv.addSchema(schema.student_employeesign_up, "sign-up");
 
 /**
  * Format error responses
@@ -48,11 +42,11 @@ module.exports = {
    */
   validateSchema: (schemaName) => {
     return (req, res, next) => {
-      let valid = ajv.validate(schemaName, req.body);
+      const valid = ajv.validate(schemaName, req.body);
       if (!valid) {
         return res.status(403).send(errorResponse(ajv.errors));
       }
-      next();
+      return next();
     };
   },
 };

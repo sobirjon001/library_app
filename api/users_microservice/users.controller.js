@@ -298,7 +298,7 @@ const normalize_phone_number = (initial_value) => {
 // controllers
 module.exports = {
   create_user: (req, res) => {
-    return check_user_data_for_mistakes(req, res, () => {
+    return check_user_data_for_mistakes(req.body, res, () => {
       req.body.password = hashSync(req.body.password, salt);
       req.body.phone_number = normalize_phone_number(req.body.phone_number);
       return create_user(req.body, (err, results) => {
@@ -415,7 +415,8 @@ module.exports = {
           }
         );
       return check_for_protected_user_ids([req.body.user_id], res, () => {
-        req.body.phone_number = normalize_phone_number(req.body.phone_number);
+        if (req.body.phone_number)
+          req.body.phone_number = normalize_phone_number(req.body.phone_number);
         return update_user(req.body, (err, results, fields) => {
           if (err) {
             console.log(err);
