@@ -4,6 +4,7 @@ const salt = genSaltSync(10);
 const { sign } = require("jsonwebtoken");
 const {
   create_user,
+  check_existing_user_ids,
   delete_users_by_user_ids,
   get_all_users,
   search_user,
@@ -21,6 +22,7 @@ const {
   update_account,
   get_account_info_by_account_id,
   get_role_names_by_user_id,
+  check_existing_role_ids,
   delete_accounts_by_account_ids,
   get_all_roles,
   get_role_by_role_id,
@@ -445,23 +447,37 @@ module.exports = {
     const user_ids_to_delete = req.body.user_ids;
     return verify_ids(user_ids_to_delete, res, () => {
       return check_for_protected_user_ids(user_ids_to_delete, res, () => {
-        return delete_users_by_user_ids(user_ids_to_delete, (err, results) => {
-          if (err) {
-            console.log(err);
-            return error_500s(500, err, res);
-          }
-          if (results.affectedRows === 0)
+        return check_existing_user_ids(user_ids_to_delete, (err1, results1) => {
+          const existing_user_ids = results1.reduce((ids, row) => {
+            ids.push(row.user_id);
+            return ids;
+          }, []);
+          const non_existing_user_ids = user_ids_to_delete.filter((id) => {
+            return !existing_user_ids.includes(id);
+          });
+          if (existing_user_ids.length === 0)
             return error_400s(
               404,
               res,
               "no data was found to delet by user ids: " + user_ids_to_delete
             );
-          return success_200s(
-            200,
-            res,
-            "successfully deleted user by ids: " + user_ids_to_delete,
-            {
-              affectedRows: results.affectedRows,
+          return delete_users_by_user_ids(
+            existing_user_ids,
+            (err2, results2) => {
+              if (err2) {
+                console.log(err2);
+                return error_500s(500, err2, res);
+              }
+              if (results2.affectedRows !== 0)
+                return success_200s(
+                  200,
+                  res,
+                  "successfully deleted user by ids: " + existing_user_ids,
+                  {
+                    affectedRows: results2.affectedRows,
+                    non_existing_user_ids,
+                  }
+                );
             }
           );
         });
@@ -632,25 +648,36 @@ module.exports = {
     const role_ids_to_delete = req.body.role_ids;
     return verify_ids(role_ids_to_delete, res, () => {
       return check_for_protected_role_ids(role_ids_to_delete, res, () => {
-        return delete_role_by_role_id(role_ids_to_delete, (err, results) => {
-          if (err) {
-            console.log(err);
-            return error_500s(500, err, res);
-          }
-          if (results.affectedRows == 0)
+        return check_existing_role_ids(role_ids_to_delete, (err1, results1) => {
+          const existing_role_ids = results1.reduce((ids, row) => {
+            ids.push(row.user_id);
+            return ids;
+          }, []);
+          const non_existing_role_ids = role_ids_to_delete.filter((id) => {
+            return !existing_role_ids.includes(id);
+          });
+          if (existing_role_ids.length === 0)
             return error_400s(
               404,
               res,
-              "no data was found to delet by role_ids: " + role_ids_to_delete
+              "no data was found to delet by role ids: " + role_ids_to_delete
             );
-          return success_200s(
-            200,
-            res,
-            "successfully deleted roles by role_ids: " + role_ids_to_delete,
-            {
-              affectedRows: results.affectedRows,
+          return delete_role_by_role_id(existing_role_ids, (err2, results2) => {
+            if (err2) {
+              console.log(err2);
+              return error_500s(500, err2, res);
             }
-          );
+            if (results2.affectedRows !== 0)
+              return success_200s(
+                200,
+                res,
+                "successfully deleted roles by ids: " + existing_role_ids,
+                {
+                  affectedRows: results2.affectedRows,
+                  non_existing_role_ids,
+                }
+              );
+          });
         });
       });
     });

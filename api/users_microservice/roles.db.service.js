@@ -109,6 +109,16 @@ module.exports = {
       }
     );
   },
+  check_existing_role_ids: (ids, callback) => {
+    pool.query(
+      `select role_id from roles where role_id in (?)`,
+      [ids],
+      (err, res) => {
+        if (err) return callback(err);
+        return callback(null, res);
+      }
+    );
+  },
   delete_role_by_role_id: (role_id, callback) => {
     pool.query(
       `delete from roles where role_id in (?);`,

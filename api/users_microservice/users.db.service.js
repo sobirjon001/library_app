@@ -88,10 +88,19 @@ module.exports = {
       }
     );
   },
+  check_existing_user_ids: (ids, callback) => {
+    pool.query(
+      `select user_id from users where user_id in (?)`,
+      [ids],
+      (err, res) => {
+        if (err) return callback(err);
+        return callback(null, res);
+      }
+    );
+  },
   delete_users_by_user_ids: (ids, callback) => {
     pool.query(`delete from users where user_id in (?)`, [ids], (err, res) => {
       if (err) return callback(err);
-      console.log(res);
       return callback(null, res);
     });
   },
