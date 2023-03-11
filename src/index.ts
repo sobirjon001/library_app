@@ -1,23 +1,23 @@
 // import libraries
 require('dotenv').config({ path: __dirname + '/.env' })
-const express = require('express')
+// mark
+import express, { Response, Request } from 'express'
 const app = express()
-const https = require('https')
-const fs = require('fs')
-const path = require('path')
+// const https = require('https')
+// const fs = require('fs')
+// const path = require('path')
 const cors = require('cors')
-const swagger_ui = require('swagger-ui-express')
-const deploy_database = require('./src/api/database/database_deployment.js')
+// const swagger_ui = require('swagger-ui-express')
+import { deploy_database } from './api/database/database_deployment'
 
 // API server settings
-const env = process.env.ENV || '-dev'
-const http_port = process.env.HTTP_PORT || 7000
+const http_port: number = process.env.HTTP_PORT ? parseInt(process.env.HTTP_PORT) : 7000
 // const https_port = process.env.HTTPS_PORT || 7443;
 // const credentials = {
 //   key: fs.readFileSync(path.resolve(__dirname, "ssl/private.key")),
 //   cert: fs.readFileSync(path.resolve(__dirname, "ssl/certificate.crt")),
 // };
-const user_router = require('./src/api/users_microservice/users.router')
+import { user_router } from './api/users_microservice/users.router'
 
 // app settings
 app.use(express.json())
@@ -39,11 +39,11 @@ app.use(cors())
 // );
 
 // sanity check
-app.get(`/api${env}/hello`, (rec, res) => {
+app.get('/api/hello', (_rec: Request, res: Response) => {
   res.status(200)
   res.send('API server is up and running!')
 })
-app.post(`/api${env}/hello`, (rec, res) => {
+app.post('/api/hello', (_rec: Request, res: Response) => {
   res.status(200)
   res.json({
     success: true,
@@ -52,11 +52,12 @@ app.post(`/api${env}/hello`, (rec, res) => {
 })
 
 // users microservice
-app.use(`/api${env}/users`, user_router)
+app.use('/api/users', user_router)
 
 // start server
-const start_server = () => {
-  app.listen(http_port, (err) => {
+const start_server = async () => {
+  await deploy_database()
+  app.listen(http_port, (err?: Error) => {
     if (err) return console.log(err)
     console.log(`http server is listening on port ${http_port}`)
   })
@@ -68,4 +69,4 @@ const start_server = () => {
   // });
 }
 
-deploy_database(start_server)
+start_server()
