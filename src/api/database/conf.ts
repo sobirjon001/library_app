@@ -61,8 +61,28 @@ export const system_roles: Role[] = [
     can_delete_book: false,
     can_read_events: false,
   },
+  {
+    role_name: 'new_hire_applicant',
+    can_read_role: false,
+    can_create_role: false,
+    can_modify_role: false,
+    can_delete_role: false,
+    can_read_order: false,
+    can_create_order: true,
+    can_modify_order: false,
+    can_delete_order: false,
+    can_read_user: false,
+    can_create_user: false,
+    can_modify_user: false,
+    can_delete_user: false,
+    can_read_book: false,
+    can_create_book: false,
+    can_modify_book: false,
+    can_delete_book: false,
+    can_read_events: false,
+  },
 ]
 
-export const sign_up_roles: string[] = ['student', 'new hire applicant']
+export const sign_up_roles: string[] = ['student', 'new_hire_applicant']
 
-export const account_statuses: string[] = ['active', 'new hire onboarding']
+export const account_statuses: string[] = ['active', 'new_hire_applicant']

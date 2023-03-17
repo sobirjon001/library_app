@@ -50,7 +50,7 @@ All fields are required. If API request accepted it has to respond with json as 
 
 **When** all fields from API specification are present with correct values
 
-**Then** API server has to respond with success, status code `200` and message telling than new role created
+**Then** API server has to respond with success, status code `201` and message telling than new role created
 
 **And** data have to have `role_id`
 

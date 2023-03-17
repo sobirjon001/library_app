@@ -1,5 +1,5 @@
 import { MysqlError } from 'mysql'
-import { Account, Obj, Role } from '../../conf/types'
+import { Account, Obj, Role, UpdateAccount } from '../../conf/types'
 import { pool } from '../database/mysql'
 
 export const create_role_db = (data: Role, callback: (db_error: MysqlError | null, db_result: any) => void): void => {
@@ -132,7 +132,7 @@ export const create_account_db = (data: Account, callback: (db_error: MysqlError
   )
 }
 
-export const update_account_db = (data: Obj, callback: (db_error: MysqlError | null, db_result: any) => void): void => {
+export const update_account_db = (data: UpdateAccount, callback: (db_error: MysqlError | null, db_result: any) => void): void => {
   pool.query(
     `update accounts set
         account_status = ?,

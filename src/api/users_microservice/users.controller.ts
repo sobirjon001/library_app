@@ -35,6 +35,7 @@ import {
   get_protected_roles_db,
   set_protected_roles_db,
   remove_role_protection_db,
+  get_account_info_by_user_login_db,
 } from './roles.db.service'
 import { get_sign_up_roles_db, get_account_status_enum_db } from '../aux_microservice/enum.db.service'
 import moment from 'moment'
@@ -441,16 +442,19 @@ export const create_role = (req: Request, res: Response): Response<any, Record<s
     return success_200s(201, res, 'Successfully created new role', {
       role_id: results.insertId,
       role_name: req.body.role_name,
+      can_read_role: req.body.can_read_role,
       can_create_role: req.body.can_create_role,
       can_modify_role: req.body.can_modify_role,
       can_delete_role: req.body.can_delete_role,
-      can_order: req.body.can_order,
+      can_read_order: req.body.can_read_order,
       can_create_order: req.body.can_create_order,
       can_modify_order: req.body.can_modify_order,
       can_delete_order: req.body.can_delete_order,
+      can_read_user: req.body.can_read_user,
       can_create_user: req.body.can_create_user,
       can_modify_user: req.body.can_modify_user,
       can_delete_user: req.body.can_delete_user,
+      can_read_book: req.body.can_read_book,
       can_create_book: req.body.can_create_book,
       can_modify_book: req.body.can_modify_book,
       can_delete_book: req.body.can_delete_book,
@@ -508,16 +512,19 @@ export const update_role = (req: Request, res: Response): Response<any, Record<s
       return success_200s(201, res, 'Successfully updated role', {
         role_id: req.body.role_id,
         role_name: req.body.role_name,
+        can_read_role: req.body.can_read_role,
         can_create_role: req.body.can_create_role,
         can_modify_role: req.body.can_modify_role,
         can_delete_role: req.body.can_delete_role,
-        can_order: req.body.can_order,
+        can_read_order: req.body.can_read_order,
         can_create_order: req.body.can_create_order,
         can_modify_order: req.body.can_modify_order,
         can_delete_order: req.body.can_delete_order,
+        can_read_user: req.body.can_read_user,
         can_create_user: req.body.can_create_user,
         can_modify_user: req.body.can_modify_user,
         can_delete_user: req.body.can_delete_user,
+        can_read_book: req.body.can_read_book,
         can_create_book: req.body.can_create_book,
         can_modify_book: req.body.can_modify_book,
         can_delete_book: req.body.can_delete_book,
@@ -664,15 +671,43 @@ export const create_account = (req: Request, res: Response): Response<any, Recor
 
 export const update_account = (req: Request, res: Response): Response<any, Record<string, any>> | void => {
   check_account_data_for_mistakes(req, res, () => {
-    update_account_db(req.body, (err: MysqlError | null, _results: any) => {
-      if (err) {
-        console.log(err)
-        return error_500s(500, err, res)
+    // 1
+    get_role_names_by_user_id_db(req.body.user_id, (error1: MysqlError | null, results1: any): Response<any, Record<string, any>> | void => {
+      if (error1) {
+        console.log(error1)
+        return error_500s(500, error1, res)
       }
-      return success_200s(201, res, 'Successfully updated account', {
-        account_id: req.body.account_id,
-        account_status: req.body.account_status,
-        termination_date: req.body.termination_date,
+      const found_duplicates: Obj[] = []
+      results1.forEach((role: Obj) => {
+        if (role.role_id == req.body.role_id) found_duplicates.push(role)
+      })
+      if (found_duplicates.length > 0) {
+        let duplicates: Obj[] = []
+        found_duplicates.forEach((duplicate) => {
+          duplicates.push({
+            account_id: duplicate.account_id,
+            user_id: req.body.user_id,
+            role_id: duplicate.role_id,
+            role_name: duplicate.role_name,
+            account_status: duplicate.account_status,
+            termination_date: duplicate.termination_date,
+          })
+        })
+        return error_400s(403, res, 'account already exists', {
+          duplicates,
+        })
+      }
+      // 2
+      update_account_db(req.body, (error2: MysqlError | null, _results2: any) => {
+        if (error2) {
+          console.log(error2)
+          return error_500s(500, error2, res)
+        }
+        return success_200s(201, res, 'Successfully updated account', {
+          account_id: req.body.account_id,
+          account_status: req.body.account_status,
+          termination_date: req.body.termination_date,
+        })
       })
     })
   })
@@ -690,6 +725,19 @@ export const get_account_info_by_account_id = (req: Request, res: Response): Res
       }
       return success_200s(200, res, 'successfully found account', results)
     })
+  })
+}
+
+export const get_account_info_by_user_login = (req: Request, res: Response): Response<any, Record<string, any>> | void => {
+  get_account_info_by_user_login_db(req.body.user_login, (err: MysqlError | null, results: any) => {
+    if (err) {
+      console.log(err)
+      return error_500s(500, err, res)
+    }
+    if (!results) {
+      return error_400s(404, res, `No account data found by user_login '${req.body.user_login}'`)
+    }
+    return success_200s(200, res, 'successfully found accounts', results)
   })
 }
 
@@ -717,7 +765,7 @@ export const delete_accounts_by_account_ids = (req: Request, res: Response): Res
         return error_500s(500, err, res)
       }
       if (results.affectedRows == 0) return error_400s(404, res, `no data was found to delet by account_ids: '${account_ids_to_delete}'`)
-      return success_200s(200, res, `successfully deleted accounts by account_ids: '${account_ids_to_delete}'`, {
+      return success_200s(201, res, `successfully deleted accounts by account_ids: '${account_ids_to_delete}'`, {
         affectedRows: results.affectedRows,
       })
     })

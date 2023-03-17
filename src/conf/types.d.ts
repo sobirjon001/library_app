@@ -42,6 +42,10 @@ export interface Role {
   can_read_events: boolean
 }
 
+export interface UpdateRole extends Role {
+  role_id: number
+}
+
 export type Access_scope =
   | 'can_read_role'
   | 'can_create_role'
@@ -60,10 +64,6 @@ export type Access_scope =
   | 'can_modify_book'
   | 'can_delete_book'
   | 'can_read_events'
-
-export interface UpdateRole extends Role {
-  role_id: number
-}
 
 export interface Account {
   user_id: number

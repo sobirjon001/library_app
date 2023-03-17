@@ -26,6 +26,7 @@ import {
   get_role_names_by_user_id,
   student_employee_sign_up,
   update_account,
+  get_account_info_by_user_login,
 } from './users.controller'
 import { validateSchema } from '../json_schema_validation/json_schema_validator'
 import { checkToken, clearance, decodeUser, login } from '../authentication/authentication'
@@ -38,6 +39,7 @@ user_router.get('/protected_roles', checkToken, clearance(['can_read_role']), ge
 user_router.get('/all_roles', get_all_roles)
 user_router.get('/role_by_role_name', checkToken, clearance(['can_read_role']), get_role_by_role_name)
 user_router.get('/role/:id', checkToken, clearance(['can_read_role']), get_role_by_role_id)
+user_router.get('/account', checkToken, clearance(['can_read_user', 'can_read_role']), get_account_info_by_user_login)
 user_router.get('/account/:id', checkToken, clearance(['can_read_user', 'can_read_role']), get_account_info_by_account_id)
 user_router.get('/role_names_by_user_id/:id', checkToken, clearance(['can_read_user', 'can_read_role']), get_role_names_by_user_id)
 user_router.get('/:id', checkToken, clearance(['can_read_user']), get_user_by_id)
@@ -55,6 +57,6 @@ user_router.patch('/protected_roles', checkToken, clearance(['can_delete_role'])
 user_router.patch('/account', checkToken, clearance(['can_modify_user', 'can_modify_role']), validateSchema('update-account'), update_account)
 user_router.delete('/', checkToken, clearance(['can_delete_user']), delete_users_by_user_ids)
 user_router.delete('/roles', checkToken, clearance(['can_delete_role']), delete_roles_by_role_ids)
-user_router.delete('/accounts_by_ids', checkToken, clearance(['can_delete_user', 'can_delete_role']), delete_accounts_by_account_ids)
+user_router.delete('/account', checkToken, clearance(['can_delete_user', 'can_delete_role']), delete_accounts_by_account_ids)
 
 export { user_router }
