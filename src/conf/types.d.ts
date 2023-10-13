@@ -15,6 +15,7 @@ export interface User {
   password: string
   e_mail: string
   phone_number: string | number
+  decodedUser?: Obj
 }
 
 export interface UpdateUser extends User {
@@ -40,6 +41,7 @@ export interface Role {
   can_modify_book: boolean
   can_delete_book: boolean
   can_read_events: boolean
+  decodedUser?: Obj
 }
 
 export interface UpdateRole extends Role {
@@ -70,6 +72,7 @@ export interface Account {
   role_id: number
   account_status: string
   termination_date?: string | null
+  decodedUser?: Obj
 }
 
 export interface UpdateAccount extends Account {
@@ -87,4 +90,5 @@ export interface SignUp {
   role_name: string
   account_status: string
   termination_date?: string
+  decodedUser?: Obj
 }

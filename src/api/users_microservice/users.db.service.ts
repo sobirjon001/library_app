@@ -51,7 +51,7 @@ export const search_user_db = (data: Obj, callback: (db_error: MysqlError | null
 
 export const update_user_db = (data: Obj, callback: (db_error: MysqlError | null, db_result: any) => void): void => {
   let columns_to_update = Object.keys(data).reduce((result, key) => {
-    if (key !== 'user_id') result = result + `, ${key} = '${data[key]}'`
+    if (!['user_id', 'decodedUser'].includes(key)) result = result + `, ${key} = '${data[key]}'`
     return result
   }, '')
   columns_to_update = columns_to_update.substring(2)

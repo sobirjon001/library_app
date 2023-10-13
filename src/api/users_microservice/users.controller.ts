@@ -179,6 +179,9 @@ const check_user_data_for_mistakes = (body: Obj, res: Response, callback: () => 
       case 'user_id':
         if (body.user_id === null || !body.user_id.toString().match(/\d+/)) failures.push("'user_id' has to all digits")
         break
+      case 'decodedUser':
+        // ignore
+        break
       default:
         failures.push(`field named '${key}' is not acceptrable!`)
     }
