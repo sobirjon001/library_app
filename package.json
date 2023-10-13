@@ -4,6 +4,8 @@
   "description": "3 layers library app for DB, API and UI QA testings practice",
   "main": "index.js",
   "scripts": {
+    "db:start": "docker-compose -f docker/mysql/docker-compose.yml up -d",
+    "db:stop": "docker-compose -f docker/mysql/docker-compose.yml down",
     "start": "nodemon src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
