@@ -61,9 +61,12 @@ export const checkToken = (req: Request, res: Response, next: NextFunction): Res
       message: 'Unauthorized! Please provide token',
     })
   }
-  verify(token, secretKey, (error: VerifyErrors | null, decodedUser: string | JwtPayload | undefined) => {
-    if (error) console.log(error.message)
-    console.log(decodedUser)
+  verify(token, secretKey, (error: VerifyErrors | null, decodedUser: string | JwtPayload | undefined): Response<any, Record<string, any>> | void => {
+    if (error)
+      return res.status(401).json({
+        success: false,
+        message: error,
+      })
     if (typeof decodedUser !== undefined) req.body.decodedUser = decodedUser
     console.log(req.body)
   })
