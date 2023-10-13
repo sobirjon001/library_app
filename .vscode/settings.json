@@ -1,0 +1,28 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": false,
+  "prettier.useEditorConfig": false,
+  "prettier.useTabs": false,
+  "prettier.configPath": ".prettierrc.json",
+  "workbench.iconTheme": "vscode-icons",
+  "vsicons.associations.files": [
+    {
+      "icon": "cucumber",
+      "extensions": ["feature"],
+      "format": "svg"
+    },
+    {
+      "icon": "bat",
+      "extensions": ["env.example", "backup"],
+      "format": "svg"
+    }
+  ],
+  "vsicons.associations.folders": [
+    {
+      "icon": "db",
+      "extensions": ["db"],
+      "format": "svg"
+    }
+  ]
+}
