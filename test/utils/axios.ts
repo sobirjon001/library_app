@@ -4,11 +4,16 @@ import { Obj } from '../../src/conf/types';
 
 export default class API {
   headers!: { Authorization: string; Accept: string; 'Content-Type': string };
+  credentials!: { user_login: string; password: string };
+
+  get_credentials(): { user_login: string; password: string } {
+    return this.credentials;
+  }
 
   static login_test(data: { user_login: string; password: string }): Promise<AxiosResponse<any, any>> {
     return axios({
       method: 'post',
-      url: `${conf.base_URL}${conf.login_endpoint}`,
+      url: `${conf.base_URL}${conf.ENDPOINT.login}`,
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
@@ -21,9 +26,10 @@ export default class API {
   }
 
   async login(data: { user_login: string; password: string }): Promise<string> {
+    this.credentials = data;
     const response = await axios({
       method: 'post',
-      url: `${conf.base_URL}${conf.login_endpoint}`,
+      url: `${conf.base_URL}${conf.ENDPOINT.login}`,
       headers: {
         'Content-Type': 'application/json',
       },

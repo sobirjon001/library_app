@@ -114,4 +114,12 @@ export interface TestPlan extends Obj {
   message_matches?: RegExp;
   data_array_of_strings?: string[];
   db_search_by_key?: string;
+  pagination?: {
+    requested_number_of_items_per_page?: number;
+    requested_page_number: number;
+    number_of_available_records: number;
+    current_page: number;
+    total_available_pages: number;
+    number_of_records_fetched: number;
+  };
 }

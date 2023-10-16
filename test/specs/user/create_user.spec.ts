@@ -23,14 +23,14 @@ describe('Creating', () => {
 
     before(async () => {
       new_user = get_random_user();
-      response = await api.fetch('post', conf.users_endpoint, new_user);
+      response = await api.fetch('post', conf.ENDPOINT.users, new_user);
       new_user.phone_number = normalize_phone_number(new_user.phone_number);
       expect(response).has.property('data');
       body = response.data;
       db_user = (await query(`select * from users where user_login = ?;`, [new_user.user_login]))[0];
     });
 
-    it("status code is '200'", () => {
+    it("status code is '201'", () => {
       expect(response.status).to.eql(201);
     });
 
@@ -84,7 +84,7 @@ describe('Creating', () => {
         before(async () => {
           new_user = get_random_user();
           new_user[length_field] = get_random_alphanumeric_in_amount_of(21);
-          response = await api.fetch('post', conf.users_endpoint, new_user);
+          response = await api.fetch('post', conf.ENDPOINT.users, new_user);
           new_user.phone_number = normalize_phone_number(new_user.phone_number);
           expect(response).has.property('data');
           body = response.data;
@@ -212,7 +212,7 @@ describe('Creating', () => {
         before(async () => {
           new_user = get_random_user();
           if (test.update) new_user[test.update.property] = test.update.value;
-          response = await api.fetch('post', conf.users_endpoint, new_user);
+          response = await api.fetch('post', conf.ENDPOINT.users, new_user);
           new_user.phone_number = normalize_phone_number(new_user.phone_number);
           expect(response).has.property('data');
           body = response.data;

@@ -5,7 +5,7 @@ config();
 
 const qa_logins: string[] = process.env.QA ? process.env.QA.split(',') : [];
 const qa_passwords: string[] = process.env.QA_PASSWORD ? process.env.QA_PASSWORD.split(',') : [];
-const qa_default_accounts: User[] = [];
+const tester_users: { available: boolean; user: User }[] = [];
 qa_logins.forEach((qa_login: string, i: number): void => {
   let qa_password: string = '';
   if (qa_passwords.length === 1) {
@@ -19,14 +19,17 @@ qa_logins.forEach((qa_login: string, i: number): void => {
   } else {
     qa_password = qa_passwords[i];
   }
-  qa_default_accounts.push({
-    first_name: `Tester_${i}`,
-    last_name: 'Account',
-    dob: '2000-01-01',
-    user_login: qa_login,
-    password: qa_password,
-    e_mail: `${qa_login}@library.com`,
-    phone_number: 1234567891 + i,
+  tester_users.push({
+    available: true,
+    user: {
+      first_name: `Tester_${i}`,
+      last_name: 'Account',
+      dob: '2000-01-01',
+      user_login: qa_login,
+      password: qa_password,
+      e_mail: `${qa_login}@library.com`,
+      phone_number: 1234567891 + i,
+    },
   });
 });
 
@@ -40,16 +43,15 @@ const admin_user: User = {
   phone_number: 1234567890,
 };
 
-const tester_users: User[] = [...qa_default_accounts];
-
 const storage: Obj = {};
 
-export const conf: Obj = {
+export const conf = {
   base_URL: `http://localhost:${process.env.HTTP_PORT}`,
-  login_endpoint: '/api/users/login',
-  decode_endpoint: '/api/users/decode',
-  users_endpoint: '/api/users',
-
+  ENDPOINT: {
+    login: '/api/users/login',
+    decode: '/api/users/decode',
+    users: '/api/users',
+  },
   admin_user,
   tester_users,
 

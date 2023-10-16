@@ -1,4 +1,4 @@
-import { User, GetValueOptions } from '../../src/conf/types';
+import { User, GetValueOptions, Obj } from '../../src/conf/types';
 import moment from 'moment';
 import { conf } from './config';
 
@@ -14,6 +14,10 @@ export enum RANDOM {
   e_mail,
   phone_number,
 }
+
+export const get_random_object_from = <T>(input: T[]): T => {
+  return input[Math.floor(Math.random() * input.length)];
+};
 
 const get_random_character_from = (input: string | string[]): string => {
   const i = Math.floor(Math.random() * input.length);
@@ -103,4 +107,23 @@ export const get_random_user = (): User => {
 
 export const normalize_phone_number = (phone_number: string | number): string => {
   return typeof phone_number === 'string' ? phone_number.replace(/-/g, '') : String(phone_number);
+};
+
+export const get_available_tester_credentials = async (): Promise<{ user_login: string; password: string }> => {
+  const tester: { available: boolean; user: User } | undefined = conf.tester_users.find((is) => is.available);
+  if (typeof tester === 'undefined') throw new Error('No available tester accounts!');
+  return { user_login: tester.user.user_login, password: tester.user.password };
+};
+
+export const return_tester_credentials = async (user_login: string): Promise<void> => {
+  const tester: { available: boolean; user: User } | undefined = conf.tester_users.find((tester) => tester.user.user_login === user_login);
+  if (typeof tester === 'undefined') throw new Error(`Failed to fing tester with user_login '${user_login}'!`);
+  tester.available = true;
+};
+
+export const get_total_pages_from = (total: number, items_per_page: number): number => {
+  if (total < items_per_page) return 1;
+  let p = Math.floor(total / items_per_page);
+  if (total % items_per_page > 0) p++;
+  return p;
 };
