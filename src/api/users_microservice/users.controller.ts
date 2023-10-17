@@ -304,25 +304,24 @@ export const get_user_by_id = (req: Request, res: Response): Response<any, Recor
 export const search_for_user = (req: Request, res: Response): Response<any, Record<string, any>> | void => {
   const acceptable_search_keys: string[] = ['user_id', 'user_login', 'e_mail', 'phone_number', 'first_name', 'last_name'];
   let acceptable_keys_not_found: boolean = true;
-  let all_of_acceptable_keys_are_blank: boolean = true;
+  let all_of_acceptable_keys_are_blank_or_star: boolean = true;
   let not_acceptable_query_parameters: string[] = [];
+  console.log(JSON.stringify(req.query, null, 2));
   Object.keys(req.query).forEach((key: string) => {
     if (acceptable_search_keys.includes(key)) {
       acceptable_keys_not_found = false;
       const value = req.query[key];
-      if (all_of_acceptable_keys_are_blank) {
-        if (value !== '' && value !== '*') {
-          all_of_acceptable_keys_are_blank = false;
-        }
+      if (all_of_acceptable_keys_are_blank_or_star) {
+        all_of_acceptable_keys_are_blank_or_star = /^\s*\*$/.test(String(value));
       }
     } else not_acceptable_query_parameters.push(key);
   });
-  if (acceptable_keys_not_found || not_acceptable_query_parameters.length > 0 || all_of_acceptable_keys_are_blank) {
+  if (acceptable_keys_not_found || not_acceptable_query_parameters.length > 0 || all_of_acceptable_keys_are_blank_or_star) {
     let responce_json: Obj = {
       available_query_parameters: ['user_id', 'user_login', 'e_mail', 'phone_number', 'first_name', 'last_name'],
     };
     if (not_acceptable_query_parameters.length > 0) responce_json.not_acceptable_query_parameters = not_acceptable_query_parameters;
-    if (!acceptable_keys_not_found && all_of_acceptable_keys_are_blank)
+    if (!acceptable_keys_not_found && all_of_acceptable_keys_are_blank_or_star)
       responce_json.invalid_values = 'all query parameters are empty or *, at least one has to have value';
     return error_400s(403, res, 'invalid querry parameter', responce_json);
   }

@@ -23,7 +23,7 @@ describe('Creating', () => {
 
     before(async () => {
       new_user = get_random_user();
-      response = await api.fetch('post', conf.ENDPOINT.users, new_user);
+      response = await api.fetch('post', conf.ENDPOINT.users, { body: new_user });
       new_user.phone_number = normalize_phone_number(new_user.phone_number);
       expect(response).has.property('data');
       body = response.data;
@@ -84,7 +84,7 @@ describe('Creating', () => {
         before(async () => {
           new_user = get_random_user();
           new_user[length_field] = get_random_alphanumeric_in_amount_of(21);
-          response = await api.fetch('post', conf.ENDPOINT.users, new_user);
+          response = await api.fetch('post', conf.ENDPOINT.users, { body: new_user });
           new_user.phone_number = normalize_phone_number(new_user.phone_number);
           expect(response).has.property('data');
           body = response.data;
@@ -134,10 +134,12 @@ describe('Creating', () => {
     const tests: TestPlan[] = [
       {
         title: "where field 'dob' does nott have pattern of 'YYYY-MM-DD'",
-        update: {
-          property: 'dob',
-          value: get_value_for(RANDOM.dob, { date_format: 'MM/DD/YYYY' }),
-        },
+        update: [
+          {
+            property: 'dob',
+            value: get_value_for(RANDOM.dob, { date_format: 'MM/DD/YYYY' }),
+          },
+        ],
         status_code: 403,
         success: false,
         message: 'invalid fields, please fix values',
@@ -146,10 +148,12 @@ describe('Creating', () => {
       },
       {
         title: "where field 'e_mail' does not have pattern of 'example@example.com'",
-        update: {
-          property: 'e_mail',
-          value: get_value_for(RANDOM.e_mail).replace('@', '@@'),
-        },
+        update: [
+          {
+            property: 'e_mail',
+            value: get_value_for(RANDOM.e_mail).replace('@', '@@'),
+          },
+        ],
         status_code: 403,
         success: false,
         message: 'invalid fields, please fix values',
@@ -158,10 +162,12 @@ describe('Creating', () => {
       },
       {
         title: "field 'phone_number' does not have pattern of '000-000-0000' or '0000000000' 10 digits in length",
-        update: {
-          property: 'phone_number',
-          value: get_value_for(RANDOM.phone_number).replace('-', '/'),
-        },
+        update: [
+          {
+            property: 'phone_number',
+            value: get_value_for(RANDOM.phone_number).replace('-', '/'),
+          },
+        ],
         status_code: 403,
         success: false,
         message: 'invalid fields, please fix values',
@@ -170,10 +176,12 @@ describe('Creating', () => {
       },
       {
         title: "values for field 'user_login'is duplicated/already exist in database",
-        update: {
-          property: 'user_login',
-          value: String(((await get_some_db_user()) as User).user_login),
-        },
+        update: [
+          {
+            property: 'user_login',
+            value: String(((await get_some_db_user()) as User).user_login),
+          },
+        ],
         status_code: 409,
         success: false,
         message_matches: /^ER_DUP_ENTRY: Duplicate entry \'[A-Za-z0-9]*\' for key \'user_login\'$/,
@@ -181,10 +189,12 @@ describe('Creating', () => {
       },
       {
         title: "values for field 'phone_number'is duplicated/already exist in database",
-        update: {
-          property: 'phone_number',
-          value: String(((await get_some_db_user()) as User).phone_number),
-        },
+        update: [
+          {
+            property: 'phone_number',
+            value: String(((await get_some_db_user()) as User).phone_number),
+          },
+        ],
         status_code: 409,
         success: false,
         message_matches: /^ER_DUP_ENTRY: Duplicate entry \'\d{10}\' for key \'phone_number\'$/,
@@ -192,10 +202,12 @@ describe('Creating', () => {
       },
       {
         title: "values for field 'e_mail'is duplicated/already exist in database",
-        update: {
-          property: 'e_mail',
-          value: String(((await get_some_db_user()) as User).e_mail),
-        },
+        update: [
+          {
+            property: 'e_mail',
+            value: String(((await get_some_db_user()) as User).e_mail),
+          },
+        ],
         status_code: 409,
         success: false,
         message_matches: /^ER_DUP_ENTRY: Duplicate entry \'[A-Za-z0-9@.]*\' for key \'e_mail\'$/,
@@ -211,8 +223,10 @@ describe('Creating', () => {
 
         before(async () => {
           new_user = get_random_user();
-          if (test.update) new_user[test.update.property] = test.update.value;
-          response = await api.fetch('post', conf.ENDPOINT.users, new_user);
+          test.update?.forEach((update) => {
+            new_user[update.property] = update.value;
+          });
+          response = await api.fetch('post', conf.ENDPOINT.users, { body: new_user });
           new_user.phone_number = normalize_phone_number(new_user.phone_number);
           expect(response).has.property('data');
           body = response.data;

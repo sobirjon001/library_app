@@ -43,12 +43,16 @@ export default class API {
     return response.data.token;
   }
 
-  async fetch(method: 'get' | 'post' | 'patch' | 'delete', endpoint: string, data?: Obj): Promise<AxiosResponse<any, any>> {
+  async fetch(
+    method: 'get' | 'post' | 'patch' | 'delete',
+    endpoint: string,
+    options?: { headers?: Obj; body?: Obj }
+  ): Promise<AxiosResponse<any, any>> {
     return axios({
       method,
       url: `${conf.base_URL}${endpoint}`,
-      headers: this.headers,
-      data,
+      headers: { ...this.headers, ...options?.headers },
+      data: options?.body,
       validateStatus: function (status) {
         return status >= 200 && status < 599; // ignoring negative codes here
       },

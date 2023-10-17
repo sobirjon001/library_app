@@ -107,12 +107,16 @@ export interface TestPlan extends Obj {
   update?: {
     property: string;
     value: string;
-  };
+  }[];
   status_code?: number;
   success?: boolean;
   message?: string;
   message_matches?: RegExp;
   data_array_of_strings?: string[];
+  data_property_string?: {
+    property: string;
+    value: any;
+  }[];
   db_search_by_key?: string;
   pagination?: {
     requested_number_of_items_per_page?: number;
@@ -122,4 +126,8 @@ export interface TestPlan extends Obj {
     total_available_pages: number;
     number_of_records_fetched: number;
   };
+  query?: {
+    parameter: string;
+    value: string;
+  }[];
 }

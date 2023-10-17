@@ -12,7 +12,7 @@ As an API application I have to be able to search for users using search query p
 
 **Given** I send API request using `GET` method with URL ending `/api/users/search `
 
-**When** at least one of query parameters f`ields user_id`, `user_login`, `e_mail`, `phone_number`, `first_name`, `last_name` present with value
+**When** at least one of query parameters fields `user_id`, `user_login`, `e_mail`, `phone_number`, `first_name`, `last_name` present with value
 
 **AND/OR** more than one query parameters fields present but at least one has value and others can be empty or equal to `*`
 

@@ -51,6 +51,7 @@ export const conf = {
     login: '/api/users/login',
     decode: '/api/users/decode',
     users: '/api/users',
+    search_users: '/api/users/search',
   },
   admin_user,
   tester_users,

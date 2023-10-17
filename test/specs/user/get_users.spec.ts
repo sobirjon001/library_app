@@ -89,8 +89,10 @@ describe('Get', () => {
 
         before(async () => {
           response = await api.fetch('get', conf.ENDPOINT.users, {
-            page: 1,
-            items_per_page: records_per_page,
+            body: {
+              page: 1,
+              items_per_page: records_per_page,
+            },
           });
           expect(response).has.property('data');
           body = response.data;
