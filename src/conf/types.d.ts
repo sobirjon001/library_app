@@ -101,17 +101,3 @@ export interface GetValueOptions {
   save: string;
   get: string;
 }
-
-export interface TestPlan extends Obj {
-  title: string;
-  update?: {
-    property: string;
-    value: string;
-  };
-  status_code?: number;
-  success?: boolean;
-  message?: string;
-  message_matches?: RegExp;
-  data_array_of_strings?: string[];
-  db_search_by_key?: string;
-}

@@ -1,8 +1,8 @@
 module.exports = {
   exit: true,
   retries: 0,
-  timeout: 10000,
-  parallel: true,
+  timeout: 0,
+  // parallel: true,
   recursive: true,
   spec: ['test/specs/**/*.spec.ts'],
   reporter: 'mochawesome',

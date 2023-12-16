@@ -14,7 +14,7 @@ describe('Decode user', () => {
   let db_user: Obj = {};
   before(async () => {
     await api.login({ user_login: process.env.ADMIN as string, password: process.env.ADMIN_PASSWORD as string });
-    response = await api.fetch('get', conf.decode_endpoint);
+    response = await api.fetch('get', conf.ENDPOINT.decode);
     expect(response.status).to.eql(200);
     expect(response).has.property('data');
     body = response.data;
