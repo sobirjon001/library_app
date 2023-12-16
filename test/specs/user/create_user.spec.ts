@@ -1,10 +1,11 @@
 import { AxiosResponse } from 'axios';
-import { Obj, TestPlan, User } from '../../../src/conf/types';
+import { Obj, User } from '../../../src/conf/types';
 import API from '../../utils/axios';
 import { conf } from '../../utils/config';
 import { RANDOM, get_random_alphanumeric_in_amount_of, get_random_user, get_value_for, normalize_phone_number } from '../../utils/value_generator';
 import { expect } from 'chai';
 import { get_some_db_user, query } from '../../utils/mysql';
+import { TestPlan } from '../../utils/helper';
 
 describe('Creating', () => {
   interface User2 extends User, Obj {}
@@ -134,26 +135,16 @@ describe('Creating', () => {
     const tests: TestPlan[] = [
       {
         title: "where field 'dob' does nott have pattern of 'YYYY-MM-DD'",
-        update: [
-          {
-            property: 'dob',
-            value: get_value_for(RANDOM.dob, { date_format: 'MM/DD/YYYY' }),
-          },
-        ],
+        update: { dob: get_value_for(RANDOM.dob, { date_format: 'MM/DD/YYYY' }) },
         status_code: 403,
         success: false,
         message: 'invalid fields, please fix values',
-        data_array_of_strings: ["'dob' has to be 'YYYY-MM-DD' format"],
+        data_validation: ["'dob' has to be 'YYYY-MM-DD' format"],
         db_search_by_key: 'user_login',
       },
       {
         title: "where field 'e_mail' does not have pattern of 'example@example.com'",
-        update: [
-          {
-            property: 'e_mail',
-            value: get_value_for(RANDOM.e_mail).replace('@', '@@'),
-          },
-        ],
+        update: { e_mail: get_value_for(RANDOM.e_mail).replace('@', '@@') },
         status_code: 403,
         success: false,
         message: 'invalid fields, please fix values',
@@ -162,12 +153,7 @@ describe('Creating', () => {
       },
       {
         title: "field 'phone_number' does not have pattern of '000-000-0000' or '0000000000' 10 digits in length",
-        update: [
-          {
-            property: 'phone_number',
-            value: get_value_for(RANDOM.phone_number).replace('-', '/'),
-          },
-        ],
+        update: { phone_number: get_value_for(RANDOM.phone_number).replace('-', '/') },
         status_code: 403,
         success: false,
         message: 'invalid fields, please fix values',
@@ -176,12 +162,7 @@ describe('Creating', () => {
       },
       {
         title: "values for field 'user_login'is duplicated/already exist in database",
-        update: [
-          {
-            property: 'user_login',
-            value: String(((await get_some_db_user()) as User).user_login),
-          },
-        ],
+        update: { user_login: String(((await get_some_db_user()) as User).user_login) },
         status_code: 409,
         success: false,
         message_matches: /^ER_DUP_ENTRY: Duplicate entry \'[A-Za-z0-9]*\' for key \'user_login\'$/,
@@ -189,12 +170,7 @@ describe('Creating', () => {
       },
       {
         title: "values for field 'phone_number'is duplicated/already exist in database",
-        update: [
-          {
-            property: 'phone_number',
-            value: String(((await get_some_db_user()) as User).phone_number),
-          },
-        ],
+        update: { phone_number: String(((await get_some_db_user()) as User).phone_number) },
         status_code: 409,
         success: false,
         message_matches: /^ER_DUP_ENTRY: Duplicate entry \'\d{10}\' for key \'phone_number\'$/,
@@ -202,12 +178,7 @@ describe('Creating', () => {
       },
       {
         title: "values for field 'e_mail'is duplicated/already exist in database",
-        update: [
-          {
-            property: 'e_mail',
-            value: String(((await get_some_db_user()) as User).e_mail),
-          },
-        ],
+        update: { e_mail: String(((await get_some_db_user()) as User).e_mail) },
         status_code: 409,
         success: false,
         message_matches: /^ER_DUP_ENTRY: Duplicate entry \'[A-Za-z0-9@.]*\' for key \'e_mail\'$/,
@@ -223,8 +194,8 @@ describe('Creating', () => {
 
         before(async () => {
           new_user = get_random_user();
-          test.update?.forEach((update) => {
-            new_user[update.property] = update.value;
+          Object.keys(test.update!).forEach((key) => {
+            new_user[key] = test.update![key];
           });
           response = await api.fetch('post', conf.ENDPOINT.users, { body: new_user });
           new_user.phone_number = normalize_phone_number(new_user.phone_number);

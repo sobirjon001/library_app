@@ -1,10 +1,11 @@
 import { AxiosResponse } from 'axios';
-import { Obj, TestPlan } from '../../../src/conf/types';
+import { Obj } from '../../../src/conf/types';
 import API from '../../utils/axios';
 import { get_available_tester_credentials, return_tester_credentials } from '../../utils/value_generator';
 import { conf } from '../../utils/config';
 import { expect } from 'chai';
 import { get_some_db_user } from '../../utils/mysql';
+import { TestPlan, generic_mocha_test_with_api_call } from '../../utils/helper';
 
 describe('Searchin users', () => {
   const api: API = new API();
@@ -64,207 +65,136 @@ describe('Searchin users', () => {
     });
   });
 
-  describe('negative scenarios', () => {
+  describe('negative scenarios', async () => {
     const tests: TestPlan[] = [
       {
         title: 'with query parameter all absent',
+        status_code: 403,
+        success: false,
+        message: 'invalid querry parameter',
       },
       {
         title: "with query parameter all equl to '*'",
-        query: [
-          {
-            parameter: 'user_id',
-            value: '*',
-          },
-          {
-            parameter: 'user_login',
-            value: '*',
-          },
-          {
-            parameter: 'e_mail',
-            value: '*',
-          },
-          {
-            parameter: 'phone_number',
-            value: '*',
-          },
-          {
-            parameter: 'first_name',
-            value: '*',
-          },
-          {
-            parameter: 'last_name',
-            value: '*',
-          },
-        ],
-        data_property_string: [
-          {
-            property: 'invalid_values',
-            value: 'all query parameters are empty or *, at least one has to have value',
-          },
-        ],
+        query: { user_id: '*', user_login: '*', e_mail: '*', phone_number: '*', first_name: '*', last_name: '*' },
+        status_code: 403,
+        success: false,
+        message: 'invalid querry parameter',
+        data_validation: {
+          invalid_values: 'all query parameters are empty or *, at least one has to have value',
+          available_query_parameters: ['user_id', 'user_login', 'e_mail', 'phone_number', 'first_name', 'last_name'],
+        },
       },
       {
         title: "with query parameter 'user_id' equl to '*'",
-        query: [
-          {
-            parameter: 'user_id',
-            value: '*',
-          },
-        ],
-        data_property_string: [
-          {
-            property: 'invalid_values',
-            value: 'all query parameters are empty or *, at least one has to have value',
-          },
-        ],
+        query: { user_id: '*' },
+        status_code: 403,
+        success: false,
+        message: 'invalid querry parameter',
+        data_validation: {
+          invalid_values: 'all query parameters are empty or *, at least one has to have value',
+          available_query_parameters: ['user_id', 'user_login', 'e_mail', 'phone_number', 'first_name', 'last_name'],
+        },
       },
       {
         title: "with query parameter 'user_login' equl to '*'",
-        query: [
-          {
-            parameter: 'user_login',
-            value: '*',
-          },
-        ],
-        data_property_string: [
-          {
-            property: 'invalid_values',
-            value: 'all query parameters are empty or *, at least one has to have value',
-          },
-        ],
+        query: { user_login: '*' },
+        status_code: 403,
+        success: false,
+        message: 'invalid querry parameter',
+        data_validation: {
+          invalid_values: 'all query parameters are empty or *, at least one has to have value',
+          available_query_parameters: ['user_id', 'user_login', 'e_mail', 'phone_number', 'first_name', 'last_name'],
+        },
       },
       {
         title: "with query parameter 'e_mail' equl to '*'",
-        query: [
-          {
-            parameter: 'e_mail',
-            value: '*',
-          },
-        ],
-        data_property_string: [
-          {
-            property: 'invalid_values',
-            value: 'all query parameters are empty or *, at least one has to have value',
-          },
-        ],
+        query: { e_mail: '*' },
+        status_code: 403,
+        success: false,
+        message: 'invalid querry parameter',
+        data_validation: {
+          invalid_values: 'all query parameters are empty or *, at least one has to have value',
+          available_query_parameters: ['user_id', 'user_login', 'e_mail', 'phone_number', 'first_name', 'last_name'],
+        },
       },
       {
         title: "with query parameter 'phone_number' equl to '*'",
-        query: [
-          {
-            parameter: 'phone_number',
-            value: '*',
-          },
-        ],
-        data_property_string: [
-          {
-            property: 'invalid_values',
-            value: 'all query parameters are empty or *, at least one has to have value',
-          },
-        ],
+        query: { phone_number: '*' },
+        status_code: 403,
+        success: false,
+        message: 'invalid querry parameter',
+        data_validation: {
+          invalid_values: 'all query parameters are empty or *, at least one has to have value',
+          available_query_parameters: ['user_id', 'user_login', 'e_mail', 'phone_number', 'first_name', 'last_name'],
+        },
       },
       {
         title: "with query parameter 'first_name' and 'last_name' equl to '*'",
-        query: [
-          {
-            parameter: 'first_name',
-            value: '*',
-          },
-          {
-            parameter: 'last_name',
-            value: '*',
-          },
-        ],
-        data_property_string: [
-          {
-            property: 'invalid_values',
-            value: 'all query parameters are empty or *, at least one has to have value',
-          },
-        ],
+        query: { first_name: '*', last_name: '*' },
+        status_code: 403,
+        success: false,
+        message: 'invalid querry parameter',
+        data_validation: {
+          invalid_values: 'all query parameters are empty or *, at least one has to have value',
+          available_query_parameters: ['user_id', 'user_login', 'e_mail', 'phone_number', 'first_name', 'last_name'],
+        },
       },
       {
         title: 'with not acceptable query parameters',
-        query: [
-          {
-            parameter: 'first_names',
-            value: 'Enabler',
-          },
-          {
-            parameter: 'nick_name',
-            value: 'Some_random_value',
-          },
-        ],
-        data_property_string: [
-          {
-            property: 'not_acceptable_query_parameters',
-            value: ['first_names', 'nick_name'],
-          },
-        ],
+        query: { first_names: 'Enabler', nick_name: 'Some_random_value' },
+        status_code: 403,
+        success: false,
+        message: 'invalid querry parameter',
+        data_validation: {
+          not_acceptable_query_parameters: ['first_names', 'nick_name'],
+          available_query_parameters: ['user_id', 'user_login', 'e_mail', 'phone_number', 'first_name', 'last_name'],
+        },
+      },
+      // ****************************** Not found users  **************************
+      {
+        title: "with query parameter 'user_id' equl to '9999999'",
+        query: { user_id: '9999999' },
+        status_code: 404,
+        success: false,
+        message: 'No records found',
+      },
+      {
+        title: "with query parameter 'user_login' equl to 'Does_not_exist'",
+        query: { user_login: 'Does_not_exist' },
+        status_code: 404,
+        success: false,
+        message: 'No records found',
+      },
+      {
+        title: "with query parameter 'e_mail' equl to 'does_not@exist.here'",
+        query: { e_mail: 'does_not@exist.here' },
+        status_code: 404,
+        success: false,
+        message: 'No records found',
+      },
+      {
+        title: "with query parameter 'phone_number' equl to '999-999-9999'",
+        query: { phone_number: '999-999-9999' },
+        status_code: 404,
+        success: false,
+        message: 'No records found',
+      },
+      {
+        title: "with query parameter 'first_name' equl to 'Does_not_exist'",
+        query: { first_name: 'Does_not_exist' },
+        status_code: 404,
+        success: false,
+        message: 'No records found',
+      },
+      {
+        title: "with query parameter 'last_name' equl to 'Does_not_exist'",
+        query: { last_name: 'Does_not_exist' },
+        status_code: 404,
+        success: false,
+        message: 'No records found',
       },
     ];
 
-    tests.forEach((test) => {
-      describe(test.title, () => {
-        let response: AxiosResponse<any, any>;
-        let body: Obj;
-
-        before(async () => {
-          let query_parameter: string = '';
-          if (test.query) {
-            test.query.forEach((query) => {
-              query_parameter += `&${query.parameter}=${query.value}`;
-            });
-            query_parameter = `?${query_parameter.substring(1)}`;
-          }
-          response = await api.fetch('get', `${conf.ENDPOINT.search_users}${query_parameter}`);
-          expect(response).has.property('data');
-          body = response.data;
-          expect(body).has.property('data');
-        });
-
-        it("status code is '403'", () => {
-          expect(response.status).to.eql(403);
-        });
-
-        it('success is false', () => {
-          expect(body).has.property('success');
-          expect(body.success).to.eql(false);
-        });
-
-        it("message equals to 'invalid querry parameter'", () => {
-          expect(body).has.property('message');
-          expect(body.message).to.eql('invalid querry parameter');
-        });
-
-        describe('data has instruction about', () => {
-          it('available_query_parameters', () => {
-            expect(body).has.property('data');
-            expect(body.data).has.property('available_query_parameters');
-            expect(body.data.available_query_parameters).to.be.an('array');
-            expect(body.data.available_query_parameters).includes.members([
-              'user_id',
-              'user_login',
-              'e_mail',
-              'phone_number',
-              'first_name',
-              'last_name',
-            ]);
-          });
-
-          test.data_property_string?.forEach((data_property) => {
-            it(data_property.property, () => {
-              expect(body).has.property('data');
-              expect(body.data).has.property(data_property.property);
-              if (Array.isArray(data_property.value)) {
-                expect(body.data[data_property.property]).to.be.an('array');
-                expect(body.data[data_property.property]).length.greaterThan(0);
-                expect(body.data[data_property.property]).include.members(data_property.value);
-              } else expect(body.data[data_property.property]).to.eql(data_property.value);
-            });
-          });
-        });
-      });
-    });
+    tests.forEach(async (tests) => await generic_mocha_test_with_api_call(api, 'get', conf.ENDPOINT.search_users, tests));
   });
 });

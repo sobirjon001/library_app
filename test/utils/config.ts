@@ -23,7 +23,7 @@ qa_logins.forEach((qa_login: string, i: number): void => {
     available: true,
     user: {
       first_name: `Tester_${i}`,
-      last_name: 'Account',
+      last_name: `Account_${i}`,
       dob: '2000-01-01',
       user_login: qa_login,
       password: qa_password,

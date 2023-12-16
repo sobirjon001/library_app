@@ -1,16 +1,17 @@
 import axios, { AxiosResponse } from 'axios';
 import { conf } from './config';
 import { Obj } from '../../src/conf/types';
+import { Credentials } from './helper';
 
 export default class API {
   headers!: { Authorization: string; Accept: string; 'Content-Type': string };
-  credentials!: { user_login: string; password: string };
+  credentials!: Credentials;
 
-  get_credentials(): { user_login: string; password: string } {
+  get_credentials(): Credentials {
     return this.credentials;
   }
 
-  static login_test(data: { user_login: string; password: string }): Promise<AxiosResponse<any, any>> {
+  static login_test(data: Credentials): Promise<AxiosResponse<any, any>> {
     return axios({
       method: 'post',
       url: `${conf.base_URL}${conf.ENDPOINT.login}`,
@@ -25,7 +26,7 @@ export default class API {
     });
   }
 
-  async login(data: { user_login: string; password: string }): Promise<string> {
+  async login(data: Credentials): Promise<string> {
     this.credentials = data;
     const response = await axios({
       method: 'post',
@@ -53,9 +54,7 @@ export default class API {
       url: `${conf.base_URL}${endpoint}`,
       headers: { ...this.headers, ...options?.headers },
       data: options?.body,
-      validateStatus: function (status) {
-        return status >= 200 && status < 599; // ignoring negative codes here
-      },
+      validateStatus: (status: number) => status >= 200 || status <= 599,
     });
   }
 }
